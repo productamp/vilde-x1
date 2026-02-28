@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { chats, getDatabase } from "../../db"
 import { ensurePreviewServer } from "../../preview/preview-server"
+import { ensureViteDevServer, hasViteConfig } from "../../preview/vite-dev-server"
 import { publicProcedure, router } from "../index"
 
 export const previewRouter = router({
@@ -24,6 +25,10 @@ export const previewRouter = router({
 
       if (!chat.worktreePath) {
         throw new Error("Chat has no local workspace")
+      }
+
+      if (await hasViteConfig(chat.worktreePath)) {
+        return await ensureViteDevServer(chat.worktreePath)
       }
 
       return await ensurePreviewServer(chat.worktreePath)

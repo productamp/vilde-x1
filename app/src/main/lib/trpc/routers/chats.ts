@@ -25,6 +25,7 @@ import { splitUnifiedDiffByFile } from "../../git/diff-parser"
 import { execWithShellEnv } from "../../git/shell-env"
 import { applyRollbackStash } from "../../git/stash"
 import { checkInternetConnection, checkOllamaStatus } from "../../ollama"
+import { killViteDevServer } from "../../preview/vite-dev-server"
 import { terminalManager } from "../../terminal/manager"
 import { publicProcedure, router } from "../index"
 
@@ -530,6 +531,13 @@ export const chatsRouter = router({
         })
       }
 
+      // Kill Vite dev server if running for this worktree
+      if (chat?.worktreePath) {
+        killViteDevServer(chat.worktreePath).catch((error) => {
+          console.error(`[chats.archive] Error killing Vite server:`, error)
+        })
+      }
+
       // Optionally delete worktree in background (don't await)
       if (input.deleteWorktree && chat?.worktreePath && chat?.branch) {
         const project = db
@@ -593,13 +601,13 @@ export const chatsRouter = router({
       const db = getDatabase()
       if (input.chatIds.length === 0) return []
 
-      // Identify worktree-mode workspaces before archiving (for terminal cleanup)
-      const worktreeChats = db
-        .select({ id: chats.id, branch: chats.branch })
+      // Identify workspaces before archiving (for terminal + Vite cleanup)
+      const allChats = db
+        .select({ id: chats.id, branch: chats.branch, worktreePath: chats.worktreePath })
         .from(chats)
         .where(inArray(chats.id, input.chatIds))
         .all()
-        .filter((c) => c.branch != null)
+      const worktreeChats = allChats.filter((c) => c.branch != null)
 
       // Archive immediately (optimistic)
       const result = db
@@ -625,6 +633,15 @@ export const chatsRouter = router({
         }).catch((error) => {
           console.error(`[chats.archiveBatch] Error killing processes:`, error)
         })
+      }
+
+      // Kill Vite dev servers for all chats with a worktree path
+      for (const c of allChats) {
+        if (c.worktreePath) {
+          killViteDevServer(c.worktreePath).catch((error) => {
+            console.error(`[chats.archiveBatch] Error killing Vite server:`, error)
+          })
+        }
       }
 
       return result
@@ -661,6 +678,13 @@ export const chatsRouter = router({
       if (chat?.branch) {
         terminalManager.killByWorkspaceId(input.id).catch((error) => {
           console.error(`[chats.delete] Error killing processes:`, error)
+        })
+      }
+
+      // Kill Vite dev server if running for this worktree
+      if (chat?.worktreePath) {
+        killViteDevServer(chat.worktreePath).catch((error) => {
+          console.error(`[chats.delete] Error killing Vite server:`, error)
         })
       }
 

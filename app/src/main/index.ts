@@ -29,6 +29,7 @@ import {
 import { cleanupGitWatchers } from "./lib/git/watcher"
 import { cancelAllPendingOAuth, handleMcpOAuthCallback } from "./lib/mcp-auth"
 import { cleanupPreviewServers } from "./lib/preview/preview-server"
+import { cleanupViteDevServers } from "./lib/preview/vite-dev-server"
 import { getAllMcpConfigHandler, hasActiveClaudeSessions, abortAllClaudeSessions } from "./lib/trpc/routers/claude"
 import { getAllCodexMcpConfigHandler, hasActiveCodexStreams, abortAllCodexStreams } from "./lib/trpc/routers/codex"
 import {
@@ -1006,6 +1007,7 @@ if (gotTheLock) {
     cancelAllPendingOAuth()
     await cleanupGitWatchers()
     await cleanupPreviewServers()
+    await cleanupViteDevServers()
     await shutdownAnalytics()
     await closeDatabase()
   })
