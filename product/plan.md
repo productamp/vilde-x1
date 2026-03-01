@@ -27,7 +27,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 1 | Feature flag | Feature flag system, bypass auth requirement | Done |
 | 2 | First working loop | Static server + preview URL mapping | Done |
 | 3 | Scaffold starter | Default project template (shadcn) | Done |
-| 4 | Vite dev server | Wire template into app, auto-start Vite | Not started |
+| 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done |
 | 5 | New project flow | Create project → scaffold → install → preview | Not started |
 | 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started |
 | 7 | Onboarding | Simplified setup for non-technical users | Not started |
@@ -95,22 +95,21 @@ Build the default project template. Bundled into the app at `app/resources/templ
 
 ### Phase 4 — Vite dev server
 
-Wire the template into the app and get the dev server running. All ProductVibe projects are Vite+React+shadcn+React Router. Uses `npm` (not bun) for user projects.
+Auto-detect Vite projects and run a dev server for live preview with HMR. Assumes template is already in the project directory with deps installed.
 
-- [ ] **Copy template on project create** — app copies `resources/templates/default/` to project directory
-- [ ] **Auto `npm install`** — run `npm install` in project dir after template copy
-- [ ] **Auto-start Vite** — detect `package.json`, run `npm run dev`, health check until port is ready
-- [ ] **Port detection** — parse Vite output for the local URL/port
-- [ ] **Preview mapping** — preview pane loads `localhost:{port}` from the running Vite dev server
-- [ ] **Lifecycle management** — stop dev server on project close, handle crashes/restarts, don't leak child processes
-- [ ] **HMR works** — Vite hot module replacement updates preview live as Claude edits files
+- [x] **Auto-start Vite** — detect `vite.config.ts`, spawn `npx vite`, health check until port is ready
+- [x] **Port detection** — parse Vite stdout for the local URL/port
+- [x] **Preview mapping** — preview pane loads `localhost:{port}` from the running Vite dev server
+- [x] **Auto `npm install`** — run `npm install` when `node_modules` is missing
+- [x] **Lifecycle management** — stop dev server on chat archive/delete and app quit, kill entire process group
+- [x] **HMR works** — Vite hot module replacement updates preview live as Claude edits files
 
 ### Phase 5 — New project flow
 
 End-to-end flow for starting a new project. User clicks "New Project" → app scaffolds template → installs deps → starts dev server → preview shows the site.
 
 - [ ] **New project UI** — simplified "create project" experience in the app
-- [ ] **Copy template** — copy bundled `resources/templates/default/` to project directory
+- [ ] **Copy template on project create** — app copies bundled `resources/templates/default/` to project directory
 - [ ] **Auto `npm install`** — run install after template copy, show progress
 - [ ] **Auto-start Vite** — start dev server after install, connect preview
 - [ ] **First chat prompt** — user sees their starter site in preview and can immediately start chatting to customise it

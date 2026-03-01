@@ -23,8 +23,8 @@ See `product/plan.md` for full details.
 | 1 | Feature flag | Feature flag system, bypass auth requirement | Done | |
 | 2 | First working loop | Static server + preview URL mapping | Done | |
 | 3 | Scaffold starter | Default project template (shadcn) | Done | |
-| 4 | Vite dev server | Wire template into app, auto-start Vite | Not started | Next up |
-| 5 | New project flow | Create project, scaffold, install, preview | Not started | |
+| 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done | |
+| 5 | New project flow | Create project, scaffold, install, preview | Not started | Next up |
 | 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started | |
 | 7 | Onboarding | Simplified setup for non-technical users | Not started | |
 | 8 | Publishing | One-click deploy to live URL | Not started | |
