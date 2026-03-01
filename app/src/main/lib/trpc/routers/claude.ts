@@ -15,7 +15,6 @@ import {
   resolveClaudeCodeExecutablePath,
   type UIMessageChunk,
 } from "../../claude"
-import { getExistingClaudeToken } from "../../claude-token"
 import {
   getMergedGlobalMcpServers,
   getMergedLocalProjectMcpServers,
@@ -166,10 +165,10 @@ function decryptToken(encrypted: string): string {
  */
 function getClaudeCodeToken(): string | null {
   try {
-    const systemToken = getExistingClaudeToken()?.trim() ?? null
-    if (getProductVibeMode() && systemToken) {
-      console.log("[claude-auth] Using existing Claude CLI credentials (ProductVibe)")
-      return systemToken
+    // ProductVibe: don't pass any token — the system claude binary handles its own auth
+    if (getProductVibeMode()) {
+      console.log("[claude-auth] ProductVibe mode — binary handles its own auth")
+      return null
     }
 
     const db = getDatabase()
@@ -249,11 +248,6 @@ function getClaudeCodeToken(): string | null {
     return decrypted
   } catch (error) {
     console.error("[claude-auth] Error getting Claude Code token:", error)
-    const systemToken = getExistingClaudeToken()?.trim() ?? null
-    if (getProductVibeMode() && systemToken) {
-      console.log("[claude-auth] Falling back to existing Claude CLI credentials")
-      return systemToken
-    }
     return null
   }
 }
@@ -1194,6 +1188,12 @@ export const claudeRouter = router({
                   isolatedConfigDir,
                   "settings.json",
                 )
+                // Credentials file — the binary reads auth tokens from here
+                const credentialsSource = path.join(homeClaudeDir, ".credentials.json")
+                const credentialsTarget = path.join(
+                  isolatedConfigDir,
+                  ".credentials.json",
+                )
 
                 let symlinkSetupComplete = true
                 let symlinkSetupHadErrors = false
@@ -1264,6 +1264,12 @@ export const claudeRouter = router({
                   settingsSource,
                   settingsTarget,
                   "settings.json",
+                  "file",
+                )
+                await ensureSymlink(
+                  credentialsSource,
+                  credentialsTarget,
+                  ".credentials.json",
                   "file",
                 )
 
@@ -1408,6 +1414,12 @@ export const claudeRouter = router({
               console.log(
                 `[claude] Using existing CLI config - API_KEY: ${claudeEnv.ANTHROPIC_API_KEY ? "set" : "not set"}, BASE_URL: ${claudeEnv.ANTHROPIC_BASE_URL || "default"}`,
               )
+            }
+
+            // ProductVibe: strip any stale OAuth token from shell env so the binary
+            // uses its own keychain auth instead of an expired env var token
+            if (!claudeCodeToken) {
+              delete claudeEnv.CLAUDE_CODE_OAUTH_TOKEN
             }
 
             // Build final env - only add OAuth token if we have one AND no existing API config
@@ -2195,7 +2207,13 @@ ${prompt}
                       const isApiKeyAuthMode = Boolean(
                         finalCustomConfig || hasExistingApiConfig,
                       )
-                      if (isApiKeyAuthMode) {
+                      if (getProductVibeMode()) {
+                        // ProductVibe: don't emit auth-error (triggers modal retry loop).
+                        // The binary handles its own auth — user needs to re-auth via CLI.
+                        errorCategory = "AUTH_FAILURE"
+                        errorContext =
+                          "Authentication failed — run 'claude' in your terminal to re-authenticate"
+                      } else if (isApiKeyAuthMode) {
                         errorCategory = "AUTH_FAILURE"
                         errorContext =
                           "Authentication failed - check your API key"

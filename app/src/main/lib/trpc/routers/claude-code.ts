@@ -132,13 +132,14 @@ export const claudeCodeRouter = router({
    * Now uses multi-account system - checks for active account
    */
   getIntegration: publicProcedure.query(() => {
-    const systemToken = getExistingClaudeToken()?.trim() ?? null
-    if (getProductVibeMode() && systemToken) {
+    // ProductVibe: connected if claude binary is on PATH — binary handles its own auth
+    if (getProductVibeMode()) {
+      const cliInstalled = isClaudeCliInstalled()
       return {
-        isConnected: true,
+        isConnected: cliInstalled,
         connectedAt: null,
-        accountId: "local-cli",
-        displayName: "Local Claude Code",
+        accountId: cliInstalled ? "local-cli" : null,
+        displayName: cliInstalled ? "Local Claude Code" : null,
       }
     }
 
@@ -332,14 +333,15 @@ export const claudeCodeRouter = router({
    * Import Claude token from system credentials
    */
   importSystemToken: publicProcedure.mutation(() => {
+    // ProductVibe: no need to import — binary handles its own auth
+    if (getProductVibeMode()) {
+      console.log("[ClaudeCode] No token import needed (ProductVibe)")
+      return { success: true }
+    }
+
     const token = getExistingClaudeToken()?.trim()
     if (!token) {
       throw new Error("No existing Claude token found")
-    }
-
-    if (getProductVibeMode()) {
-      console.log("[ClaudeCode] Using existing system token directly in ProductVibe")
-      return { success: true }
     }
 
     storeOAuthToken(token)
@@ -356,15 +358,16 @@ export const claudeCodeRouter = router({
       throw new Error("Claude Code CLI is not installed")
     }
 
-    const productVibeMode = getProductVibeMode()
+    // ProductVibe: binary is installed, it handles its own auth — nothing to do
+    if (getProductVibeMode()) {
+      console.log("[ClaudeCode] CLI found, binary handles its own auth (ProductVibe)")
+      return { success: true, source: "existing-token" as const }
+    }
+
     const existingToken = getExistingClaudeToken()?.trim()
     if (existingToken) {
-      if (!productVibeMode) {
-        storeOAuthToken(existingToken)
-        console.log("[ClaudeCode] Imported existing local Claude token")
-      } else {
-        console.log("[ClaudeCode] Using existing local Claude token directly in ProductVibe")
-      }
+      storeOAuthToken(existingToken)
+      console.log("[ClaudeCode] Imported existing local Claude token")
       return { success: true, source: "existing-token" as const }
     }
 
@@ -376,12 +379,8 @@ export const claudeCodeRouter = router({
       throw new Error(result.error || "Claude Code authentication failed")
     }
 
-    if (!productVibeMode) {
-      storeOAuthToken(result.token)
-      console.log("[ClaudeCode] Authenticated local Claude CLI via setup-token")
-    } else {
-      console.log("[ClaudeCode] Authenticated local Claude CLI via setup-token for ProductVibe")
-    }
+    storeOAuthToken(result.token)
+    console.log("[ClaudeCode] Authenticated local Claude CLI via setup-token")
     return { success: true, source: "setup-token" as const }
   }),
 
@@ -390,9 +389,9 @@ export const claudeCodeRouter = router({
    * Now uses multi-account system - gets token from active account
    */
   getToken: publicProcedure.query(() => {
-    const systemToken = getExistingClaudeToken()?.trim() ?? null
-    if (getProductVibeMode() && systemToken) {
-      return { token: systemToken, error: null }
+    // ProductVibe: no token needed — binary handles its own auth
+    if (getProductVibeMode()) {
+      return { token: null, error: null }
     }
 
     const db = getDatabase()
