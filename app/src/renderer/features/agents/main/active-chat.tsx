@@ -5206,6 +5206,9 @@ export function ChatView({
     prevDiffStateRef.current = { isOpen: isDiffSidebarOpen, mode: diffDisplayMode, detailsOpen: isDetailsSidebarOpen }
   }, [isDiffSidebarOpen, diffDisplayMode, isDetailsSidebarOpen, setDiffDisplayMode, setIsDetailsSidebarOpen, setIsDiffSidebarOpen])
 
+  // Determine if we're in ProductVibe mode (declared early for traffic light effect below)
+  const productVibeMode = useAtomValue(productVibeModeAtom)
+
   // Hide/show traffic lights based on full-page diff or full-page file viewer
   // When exiting full-page mode, restore based on sidebar state (not unconditionally true)
   useEffect(() => {
@@ -5215,8 +5218,8 @@ export function ChatView({
     const isFullPageDiff = isDiffSidebarOpen && diffDisplayMode === "full-page"
     const isFullPageFileViewer = !!fileViewerPath && fileViewerDisplayMode === "full-page"
     const shouldHide = isFullPageDiff || isFullPageFileViewer
-    window.desktopApi.setTrafficLightVisibility(shouldHide ? false : sidebarOpen)
-  }, [isDiffSidebarOpen, diffDisplayMode, fileViewerPath, fileViewerDisplayMode, isDesktop, isFullscreen, sidebarOpen])
+    window.desktopApi.setTrafficLightVisibility(productVibeMode ? true : (shouldHide ? false : sidebarOpen))
+  }, [isDiffSidebarOpen, diffDisplayMode, fileViewerPath, fileViewerDisplayMode, isDesktop, isFullscreen, sidebarOpen, productVibeMode])
 
   // Track diff sidebar width for responsive header
   const storedDiffSidebarWidth = useAtomValue(agentsDiffSidebarWidthAtom)
@@ -5346,7 +5349,6 @@ export function ChatView({
 
   // Determine if we're in sandbox mode
   const chatSourceMode = useAtomValue(chatSourceModeAtom)
-  const productVibeMode = useAtomValue(productVibeModeAtom)
 
   // Fetch chat data from local or remote based on mode
   const { data: localAgentChat, isLoading: isLocalLoading } = api.agents.getAgentChat.useQuery(
@@ -7533,8 +7535,7 @@ Make sure to preserve all functionality from both branches when resolving confli
       <div className="flex-1 overflow-hidden flex">
         {/* Chat Panel */}
         <div
-          className="flex-1 flex flex-col overflow-hidden relative"
-          style={{ minWidth: "350px" }}
+          className={cn("flex-1 flex flex-col overflow-hidden relative", productVibeMode ? "min-w-72" : "min-w-[350px]")}
         >
           {/* SubChatSelector header - absolute when sidebar open (desktop only), regular div otherwise */}
           {!shouldHideChatHeader && (
@@ -7658,8 +7659,9 @@ Make sure to preserve all functionality from both branches when resolving confli
                       </span>
                     </PreviewSetupHoverCard>
                   ))}
-                {/* Overview/Terminal Button - shows when sidebar is closed and worktree/sandbox exists (desktop only) */}
+                {/* Overview/Terminal Button - shows when sidebar is closed and worktree/sandbox exists (desktop only). Hidden in ProductVibe mode. */}
                 {!isMobileFullscreen &&
+                  !productVibeMode &&
                   (worktreePath || sandboxId) && (
                     isUnifiedSidebarEnabled ? (
                       // Details button for unified sidebar
@@ -8080,20 +8082,22 @@ Make sure to preserve all functionality from both branches when resolving confli
         {canOpenPreview && !isMobileFullscreen && !isUnifiedSidebarEnabled && (
           <ResizableSidebar
             isOpen={isPreviewSidebarOpen}
-            onClose={() => setIsPreviewSidebarOpen(false)}
+            onClose={productVibeMode ? () => {} : () => setIsPreviewSidebarOpen(false)}
             widthAtom={agentsPreviewSidebarWidthAtom}
             minWidth={350}
             side="right"
             animationDuration={0}
             initialWidth={0}
             exitWidth={0}
-            showResizeTooltip={true}
+            showResizeTooltip={!productVibeMode}
+            disableClickToClose={productVibeMode}
             className="bg-tl-background border-l"
             style={{ borderLeftWidth: "0.5px" }}
           >
             {isQuickSetup ? (
               <div className="flex flex-col h-full">
-                {/* Header with close button */}
+                {/* Header with close button — hidden in ProductVibe mode */}
+                {!productVibeMode && (
                 <div className="flex items-center justify-end px-3 h-10 bg-tl-background flex-shrink-0 border-b border-border/50">
                   <Button
                     variant="ghost"
@@ -8103,6 +8107,7 @@ Make sure to preserve all functionality from both branches when resolving confli
                     <IconCloseSidebarRight className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
+                )}
                 {/* Content */}
                 <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
                   <div className="text-muted-foreground mb-4">
@@ -8137,7 +8142,7 @@ Make sure to preserve all functionality from both branches when resolving confli
                 previewBaseUrl={previewBaseUrl!}
                 repository={repository}
                 hideHeader={false}
-                onClose={() => setIsPreviewSidebarOpen(false)}
+                onClose={productVibeMode ? undefined : () => setIsPreviewSidebarOpen(false)}
               />
             )}
           </ResizableSidebar>

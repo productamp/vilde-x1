@@ -42,6 +42,7 @@ import { McpWidget } from "./sections/mcp-widget"
 import { FilesTab, type FilesTabHandle } from "./sections/files-tab"
 import type { ParsedDiffFile } from "./types"
 import { fileViewerOpenAtomFamily, type AgentMode } from "../agents/atoms"
+import { productVibeModeAtom } from "@/lib/product-vibe"
 import { AgentPreview } from "../agents/ui/agent-preview"
 import {
   agentsSettingsDialogOpenAtom,
@@ -237,8 +238,14 @@ export function DetailsSidebar({
   // Global sidebar open state
   const [isOpen, setIsOpen] = useAtom(detailsSidebarOpenAtom)
 
+  const productVibeMode = useAtomValue(productVibeModeAtom)
+
   // Active tab state (Details / Files)
-  const [activeTab, setActiveTab] = useAtom(detailsSidebarTabAtom)
+  const [rawActiveTab, setActiveTab] = useAtom(detailsSidebarTabAtom)
+  // In ProductVibe mode, hide "details" tab — default to "preview", allow "files"
+  const activeTab = productVibeMode
+    ? (rawActiveTab === "details" ? "preview" : rawActiveTab)
+    : (rawActiveTab === "preview" && !previewBaseUrl ? "details" : rawActiveTab)
 
   // Files tab ref for header actions
   const filesTabRef = useRef<FilesTabHandle>(null)
@@ -256,12 +263,6 @@ export function DetailsSidebar({
     setSettingsTab("mcp")
     setSettingsOpen(true)
   }, [setSettingsTab, setSettingsOpen])
-
-  useEffect(() => {
-    if (activeTab === "preview" && !previewBaseUrl) {
-      setActiveTab("details")
-    }
-  }, [activeTab, previewBaseUrl, setActiveTab])
 
   // Per-workspace widget visibility
   const widgetVisibilityAtom = useMemo(
@@ -318,22 +319,25 @@ export function DetailsSidebar({
   return (
     <ResizableSidebar
       isOpen={isOpen}
-      onClose={closeSidebar}
+      onClose={productVibeMode ? () => {} : closeSidebar}
       widthAtom={detailsSidebarWidthAtom}
       side="right"
       minWidth={250}
-      maxWidth={700}
+      maxWidth={productVibeMode ? 9999 : 700}
       animationDuration={0}
       initialWidth={0}
       exitWidth={0}
-      showResizeTooltip={true}
+      showResizeTooltip={!productVibeMode}
+      disableClickToClose={productVibeMode}
       className="bg-tl-background border-l"
-      style={{ borderLeftWidth: "0.5px", overflow: "hidden" }}
+      style={{ borderLeftWidth: "0.5px" }}
     >
       <div className="flex flex-col h-full min-w-0 overflow-hidden">
-        {/* Header with pill tabs */}
+        {/* Header with pill tabs — hidden when merged into preview header in ProductVibe mode */}
+        {!(productVibeMode && activeTab === "preview") && (
         <div className="flex items-center justify-between px-2 h-10 bg-tl-background flex-shrink-0 border-b border-border/50">
           <div className="flex items-center gap-2">
+            {!productVibeMode && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -351,9 +355,11 @@ export function DetailsSidebar({
                 {toggleDetailsHotkey && <Kbd>{toggleDetailsHotkey}</Kbd>}
               </TooltipContent>
             </Tooltip>
+            )}
 
             {/* Pill tabs */}
             <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+              {!productVibeMode && (
               <button
                 type="button"
                 onClick={() => setActiveTab("details")}
@@ -366,18 +372,7 @@ export function DetailsSidebar({
               >
                 Details
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("files")}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
-                  activeTab === "files"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Files
-              </button>
+              )}
               {previewBaseUrl && (
                 <button
                   type="button"
@@ -392,6 +387,18 @@ export function DetailsSidebar({
                   Preview
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setActiveTab("files")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
+                  activeTab === "files"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Files
+              </button>
             </div>
           </div>
 
@@ -440,6 +447,7 @@ export function DetailsSidebar({
             <div className="w-[52px]" />
           )}
         </div>
+        )}
 
         {/* Tab content — both tabs always mounted to preserve state */}
         <div className={cn("flex-1 overflow-y-auto py-2", activeTab !== "details" && "hidden")}>
@@ -569,6 +577,34 @@ export function DetailsSidebar({
               previewBaseUrl={previewBaseUrl}
               repository={remoteInfo?.repository}
               hideHeader={false}
+              headerLeft={productVibeMode ? (
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("preview")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
+                      activeTab === "preview"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("files")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
+                      activeTab === "files"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Files
+                  </button>
+                </div>
+              ) : undefined}
             />
           </div>
         )}

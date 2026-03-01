@@ -59,6 +59,7 @@ interface AgentModelSelectorProps {
   contentClassName?: string
   onOpenModelsSettings?: () => void
   onContinueWithProvider?: (provider: AgentProviderId) => void
+  iconOnly?: boolean
   claude: {
     models: ClaudeModelOption[]
     selectedModelId?: string
@@ -321,6 +322,7 @@ export function AgentModelSelector({
   contentClassName,
   onOpenModelsSettings,
   onContinueWithProvider,
+  iconOnly = false,
   claude,
   codex,
 }: AgentModelSelectorProps) {
@@ -543,8 +545,8 @@ export function AgentModelSelector({
           )}
         >
           {triggerIcon}
-          <span className="truncate">{selectedModelLabel}</span>
-          <IconChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+          {!iconOnly && <span className="truncate">{selectedModelLabel}</span>}
+          {!iconOnly && <IconChevronDown className="h-3 w-3 shrink-0 opacity-50" />}
         </button>
       </PopoverTrigger>
       <PopoverContent

@@ -10,6 +10,8 @@ import {
 } from "../../../components/ui/tooltip"
 import { Kbd } from "../../../components/ui/kbd"
 import { useResolvedHotkeyDisplay } from "../../../lib/hotkeys"
+import { useAtomValue } from "jotai"
+import { productVibeModeAtom } from "../../../lib/product-vibe"
 
 interface AgentsHeaderControlsProps {
   isSidebarOpen: boolean
@@ -25,9 +27,11 @@ export function AgentsHeaderControls({
   isSubChatsSidebarOpen = false,
 }: AgentsHeaderControlsProps) {
   const toggleSidebarHotkey = useResolvedHotkeyDisplay("toggle-sidebar")
+  const productVibeMode = useAtomValue(productVibeModeAtom)
 
   // Only show open button when both sidebars are closed
-  if (isSidebarOpen || isSubChatsSidebarOpen) return null
+  // In ProductVibe mode, sub-chats sidebar doesn't exist so ignore it
+  if (isSidebarOpen || (!productVibeMode && isSubChatsSidebarOpen)) return null
 
   return (
     <TooltipProvider>

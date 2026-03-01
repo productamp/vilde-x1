@@ -52,6 +52,8 @@ import { toast } from "sonner"
 import { SearchCombobox } from "../../../components/ui/search-combobox"
 import { SubChatContextMenu } from "./sub-chat-context-menu"
 import { formatTimeAgo } from "../utils/format-time-ago"
+import { productVibeModeAtom } from "../../../lib/product-vibe"
+import { ChatSelectorDialog } from "./chat-selector-dialog"
 
 interface DiffStats {
   fileCount: number
@@ -229,6 +231,8 @@ export function SubChatSelector({
     agentsSubChatsSidebarModeAtom,
   )
   const pendingQuestionsMap = useAtomValue(pendingUserQuestionsAtom)
+  const productVibeMode = useAtomValue(productVibeModeAtom)
+  const [isChatSelectorOpen, setIsChatSelectorOpen] = useState(false)
 
   // Overview sidebar state - to check if widgets are visible
   const isUnifiedSidebarEnabled = useAtomValue(unifiedSidebarEnabledAtom)
@@ -635,7 +639,7 @@ export function SubChatSelector({
       className="flex items-center gap-1 h-7 w-full"
       style={{
         // @ts-expect-error - WebKit-specific property for Electron window dragging
-        WebkitAppRegion: "drag",
+        WebkitAppRegion: productVibeMode ? "no-drag" : "drag",
       }}
     >
       {/* Burger button - hidden when sub-chats sidebar is open (it moves into sidebar) */}
@@ -656,8 +660,8 @@ export function SubChatSelector({
         </Button>
       )}
 
-      {/* Open sidebar button - only on desktop when in tabs mode */}
-      {!isMobile && subChatsSidebarMode === "tabs" && (
+      {/* Open sidebar button - only on desktop when in tabs mode, hidden in ProductVibe mode */}
+      {!isMobile && subChatsSidebarMode === "tabs" && !productVibeMode && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -684,6 +688,11 @@ export function SubChatSelector({
           WebkitAppRegion: "no-drag",
         }}
       >
+        {/* In ProductVibe mode, hide tabs — chat switching is via the dialog */}
+        {productVibeMode ? (
+          <div className="flex-1" />
+        ) : (
+        <>
         {/* Left gradient - visibility controlled via ref */}
         <div
           ref={leftGradientRef}
@@ -937,10 +946,12 @@ export function SubChatSelector({
             </div>
           </div>
         )}
+        </>
+        )}
       </div>
 
-      {/* Action buttons - always visible on mobile, on desktop only in tabs mode */}
-      {(isMobile || (!isMobile && subChatsSidebarMode === "tabs")) && (
+      {/* Action buttons - always visible on mobile, on desktop only in tabs mode (or always in ProductVibe mode) */}
+      {(isMobile || productVibeMode || (!isMobile && subChatsSidebarMode === "tabs")) && (
         <div
           className="flex items-center gap-1"
           style={{
@@ -948,16 +959,47 @@ export function SubChatSelector({
             WebkitAppRegion: "no-drag",
           }}
         >
-          <SearchHistoryPopover
-            ref={searchHistoryPopoverRef}
-            sortedSubChats={sortedSubChats}
-            loadingSubChats={loadingSubChats}
-            subChatUnseenChanges={subChatUnseenChanges}
-            pendingQuestionsMap={pendingQuestionsMap}
-            pendingPlanApprovals={pendingPlanApprovals}
-            allSubChatsLength={allSubChats.length}
-            onSelect={handleSelectFromHistory}
-          />
+          {productVibeMode ? (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 p-0 hover:bg-foreground/10 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] flex-shrink-0 rounded-md flex items-center justify-center"
+                    onClick={() => setIsChatSelectorOpen(true)}
+                  >
+                    <ClockIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Search chats
+                </TooltipContent>
+              </Tooltip>
+              <ChatSelectorDialog
+                open={isChatSelectorOpen}
+                onOpenChange={setIsChatSelectorOpen}
+                sortedSubChats={sortedSubChats}
+                loadingSubChats={loadingSubChats}
+                subChatUnseenChanges={subChatUnseenChanges}
+                pendingQuestionsMap={pendingQuestionsMap}
+                pendingPlanApprovals={pendingPlanApprovals}
+                onSelect={handleSelectFromHistory}
+                onCreateNew={onCreateNew}
+              />
+            </>
+          ) : (
+            <SearchHistoryPopover
+              ref={searchHistoryPopoverRef}
+              sortedSubChats={sortedSubChats}
+              loadingSubChats={loadingSubChats}
+              subChatUnseenChanges={subChatUnseenChanges}
+              pendingQuestionsMap={pendingQuestionsMap}
+              pendingPlanApprovals={pendingPlanApprovals}
+              allSubChatsLength={allSubChats.length}
+              onSelect={handleSelectFromHistory}
+            />
+          )}
         </div>
       )}
 
@@ -991,8 +1033,8 @@ export function SubChatSelector({
         </div>
       )}
 
-      {/* Terminal button - visible on desktop when unified sidebar is disabled OR terminal widget is hidden, and terminal is not already open */}
-      {!isMobile && canOpenTerminal && showTerminalButton && !isTerminalOpen && (
+      {/* Terminal button - visible on desktop when unified sidebar is disabled OR terminal widget is hidden, and terminal is not already open. Hidden in ProductVibe mode. */}
+      {!isMobile && !productVibeMode && canOpenTerminal && showTerminalButton && !isTerminalOpen && (
         <div
           className="rounded-md bg-background/10 backdrop-blur-[10px] flex items-center justify-center"
           style={{

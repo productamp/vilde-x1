@@ -67,6 +67,7 @@ import {
   type SubChatFileChange,
 } from "../atoms"
 import { useAgentSubChatStore } from "../stores/sub-chat-store"
+import { productVibeModeAtom } from "../../../lib/product-vibe"
 import { AgentsSlashCommand, type SlashCommandOption } from "../commands"
 import { AgentModelSelector } from "../components/agent-model-selector"
 import { AgentSendButton } from "../components/agent-send-button"
@@ -448,6 +449,8 @@ export const ChatInputArea = memo(function ChatInputArea({
       setModeTooltip(null)
     }
   }, [modeDropdownOpen])
+
+  const productVibeMode = useAtomValue(productVibeModeAtom)
 
   // Model dropdown state
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false)
@@ -1543,6 +1546,7 @@ export const ChatInputArea = memo(function ChatInputArea({
                       )}
                   </DropdownMenu>
 
+                  {!productVibeMode && (
                   <div className="group/model-controls flex items-center gap-0.5">
                     <AgentModelSelector
                       open={isModelDropdownOpen}
@@ -1610,10 +1614,82 @@ export const ChatInputArea = memo(function ChatInputArea({
                       }}
                     />
                   </div>
+                  )}
 
                 </div>
 
                 <div className="flex items-center gap-0.5 ml-auto flex-shrink-0">
+                  {/* Model selector icon - right side in ProductVibe mode */}
+                  {productVibeMode && (
+                  <div className="group/model-controls flex items-center gap-0.5">
+                    <AgentModelSelector
+                      open={isModelDropdownOpen}
+                      onOpenChange={setIsModelDropdownOpen}
+                      selectedAgentId={provider}
+                      iconOnly
+                      onSelectedAgentIdChange={(nextProvider) => {
+                        if (!canSwitchProvider) return
+                        if (nextProvider === provider) return
+                        onProviderChange?.(nextProvider)
+                      }}
+                      allowProviderSwitch={canSwitchProvider}
+                      onContinueWithProvider={!canSwitchProvider ? onContinueWithProvider : undefined}
+                      selectedModelLabel={selectedModelLabel}
+                      onOpenModelsSettings={() => {
+                        setSettingsTab("models")
+                        setSettingsOpen(true)
+                      }}
+                      claude={{
+                        models: availableModels.models.filter((m) => !hiddenModels.includes(m.id)),
+                        selectedModelId: selectedModel?.id,
+                        onSelectModel: (modelId) => {
+                          const model =
+                            availableModels.models.find((item) => item.id === modelId) ||
+                            availableModels.models[0]
+                          if (!model) return
+                          setSelectedModel(model)
+                          setSelectedSubChatModelId(model.id)
+                          setLastSelectedModelId(model.id)
+                        },
+                        hasCustomModelConfig: hasCustomClaudeConfig,
+                        isOffline: availableModels.isOffline && availableModels.hasOllama,
+                        ollamaModels: availableModels.ollamaModels,
+                        selectedOllamaModel: currentOllamaModel,
+                        recommendedOllamaModel: availableModels.recommendedModel,
+                        onSelectOllamaModel: setSelectedOllamaModel,
+                        isConnected: isClaudeConnected,
+                        thinkingEnabled,
+                        onThinkingChange: setThinkingEnabled,
+                      }}
+                      codex={{
+                        models: codexUiModels,
+                        selectedModelId: selectedCodexModel.id,
+                        onSelectModel: (modelId) => {
+                          const model = codexUiModels.find((item) => item.id === modelId)
+                          if (!model) return
+                          const nextThinking = model.thinkings.includes(
+                            selectedSubChatCodexThinking as CodexThinkingLevel,
+                          )
+                            ? (selectedSubChatCodexThinking as CodexThinkingLevel)
+                            : (model.thinkings.includes("high")
+                              ? "high"
+                              : model.thinkings[0]!)
+
+                          setSelectedSubChatCodexModelId(model.id)
+                          setSelectedSubChatCodexThinking(nextThinking)
+                          setLastSelectedCodexModelId(model.id)
+                          setLastSelectedCodexThinking(nextThinking)
+                        },
+                        selectedThinking: selectedCodexThinking,
+                        onSelectThinking: (thinking) => {
+                          setSelectedSubChatCodexThinking(thinking)
+                          setLastSelectedCodexThinking(thinking)
+                        },
+                        isConnected: codexOnboardingCompleted,
+                      }}
+                    />
+                  </div>
+                  )}
                   {/* Hidden file input - accepts any files */}
                   <input
                     type="file"
@@ -1636,13 +1712,15 @@ export const ChatInputArea = memo(function ChatInputArea({
                     </div>
                   ) : (
                     <>
-                      {/* Context window indicator - click to compact */}
+                      {/* Context window indicator - click to compact. Hidden in ProductVibe mode. */}
+                      {!productVibeMode && (
                       <AgentContextIndicator
                         tokenData={messageTokenData}
                         // onCompact={onCompact}
                         isCompacting={isCompacting}
                         disabled={isStreaming}
                       />
+                      )}
 
                       {/* Attachment button */}
                       <Button

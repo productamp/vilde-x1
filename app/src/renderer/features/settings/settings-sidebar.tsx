@@ -25,6 +25,7 @@ import {
   SkillIconFilled,
 } from "../../components/ui/icons"
 import { desktopViewAtom } from "../agents/atoms"
+import { productVibeModeAtom } from "../../lib/product-vibe"
 
 // Check if we're in development mode
 const isDevelopment = import.meta.env.DEV
@@ -144,12 +145,15 @@ export function SettingsSidebar() {
   const setDesktopView = useSetAtom(desktopViewAtom)
   const isDesktop = useAtomValue(isDesktopAtom)
 
+  const productVibeMode = useAtomValue(productVibeModeAtom)
+
   // Hide native traffic lights when settings sidebar is shown
+  // (skip in ProductVibe mode — global header manages traffic lights)
   useEffect(() => {
-    if (!isDesktop) return
+    if (!isDesktop || productVibeMode) return
     if (typeof window === "undefined" || !window.desktopApi?.setTrafficLightVisibility) return
     window.desktopApi.setTrafficLightVisibility(false)
-  }, [isDesktop])
+  }, [isDesktop, productVibeMode])
 
   // Beta tab click counter for unlocking devtools
   const betaClickCountRef = useRef(0)

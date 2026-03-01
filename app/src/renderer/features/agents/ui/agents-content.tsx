@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { cn } from "../../../lib/utils"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useQuery } from "@tanstack/react-query"
 // import { useSearchParams, useRouter } from "next/navigation" // Desktop doesn't use next/navigation
@@ -1014,39 +1015,40 @@ export function AgentsContent() {
   return (
     <>
       <div className="flex h-full">
-        {/* Sub-chats sidebar - only show in sidebar mode when viewing a chat */}
-        <ResizableSidebar
-          isOpen={!!isSubChatsSidebarOpen}
-          onClose={() => {
-            setShouldAnimateSubChatsSidebar(true)
-            setSubChatsSidebarMode("tabs")
-          }}
-          widthAtom={agentsSubChatsSidebarWidthAtom}
-          minWidth={160}
-          maxWidth={300}
-          side="left"
-          animationDuration={0}
-          initialWidth={0}
-          exitWidth={0}
-          disableClickToClose={true}
-        >
-          <AgentsSubChatsSidebar
+        {/* Sub-chats sidebar - only show in sidebar mode when viewing a chat, hidden in ProductVibe mode */}
+        {!productVibeMode && (
+          <ResizableSidebar
+            isOpen={!!isSubChatsSidebarOpen}
             onClose={() => {
               setShouldAnimateSubChatsSidebar(true)
               setSubChatsSidebarMode("tabs")
             }}
-            isMobile={isMobile}
-            isSidebarOpen={sidebarOpen}
-            onBackToChats={() => setSidebarOpen((prev) => !prev)}
-            isLoading={isLoadingSubChats}
-            agentName={chatData?.name}
-          />
-        </ResizableSidebar>
+            widthAtom={agentsSubChatsSidebarWidthAtom}
+            minWidth={160}
+            maxWidth={300}
+            side="left"
+            animationDuration={0}
+            initialWidth={0}
+            exitWidth={0}
+            disableClickToClose={true}
+          >
+            <AgentsSubChatsSidebar
+              onClose={() => {
+                setShouldAnimateSubChatsSidebar(true)
+                setSubChatsSidebarMode("tabs")
+              }}
+              isMobile={isMobile}
+              isSidebarOpen={sidebarOpen}
+              onBackToChats={() => setSidebarOpen((prev) => !prev)}
+              isLoading={isLoadingSubChats}
+              agentName={chatData?.name}
+            />
+          </ResizableSidebar>
+        )}
 
         {/* Main content */}
         <div
-          className="flex-1 min-w-0 overflow-hidden"
-          style={{ minWidth: "350px" }}
+          className={cn("flex-1 min-w-0 overflow-hidden", productVibeMode ? "min-w-72" : "min-w-[350px]")}
         >
           {desktopView === "settings" ? (
             <SettingsContent />

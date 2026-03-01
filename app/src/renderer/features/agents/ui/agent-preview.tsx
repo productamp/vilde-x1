@@ -28,6 +28,7 @@ interface AgentPreviewProps {
   previewBaseUrl: string
   repository?: string
   hideHeader?: boolean
+  headerLeft?: React.ReactNode
   onClose?: () => void
   isMobile?: boolean
 }
@@ -37,6 +38,7 @@ export function AgentPreview({
   previewBaseUrl,
   repository,
   hideHeader = false,
+  headerLeft,
   onClose,
   isMobile = false,
 }: AgentPreviewProps) {
@@ -391,59 +393,99 @@ export function AgentPreview({
 
       {/* Desktop Header */}
       {!isMobile && !hideHeader && (
-        <div className="flex items-center justify-between px-3 h-10 bg-tl-background flex-shrink-0">
-          {/* Left: Refresh + Viewport Toggle + Scale */}
-          <div className="flex items-center gap-1 flex-1">
-            <Button
-              variant="ghost"
-              onClick={handleReload}
-              disabled={isRefreshing}
-              className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
-            >
-              <RotateCw
-                className={cn(
-                  "h-3.5 w-3.5 text-muted-foreground",
-                  isRefreshing && "animate-spin",
+        <div className={cn("flex items-center justify-between px-3 h-10 flex-shrink-0", headerLeft ? "bg-background" : "bg-tl-background")}>
+          {headerLeft ? (
+            <>
+              {/* Left: pill tabs from parent */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {headerLeft}
+              </div>
+
+              {/* Right: all preview controls */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  onClick={handleReload}
+                  disabled={isRefreshing}
+                  className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
+                >
+                  <RotateCw
+                    className={cn(
+                      "h-3.5 w-3.5 text-muted-foreground",
+                      isRefreshing && "animate-spin",
+                    )}
+                  />
+                </Button>
+
+                <ViewportToggle value={viewportMode} onChange={setViewportMode} />
+
+                <ScaleControl value={scale} onChange={setScale} />
+
+                <Button
+                  variant="ghost"
+                  className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
+                  onClick={() => window.open(previewUrl, "_blank")}
+                >
+                  <ExternalLinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Left: Refresh + Viewport Toggle + Scale */}
+              <div className="flex items-center gap-1 flex-1">
+                <Button
+                  variant="ghost"
+                  onClick={handleReload}
+                  disabled={isRefreshing}
+                  className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
+                >
+                  <RotateCw
+                    className={cn(
+                      "h-3.5 w-3.5 text-muted-foreground",
+                      isRefreshing && "animate-spin",
+                    )}
+                  />
+                </Button>
+
+                <ViewportToggle value={viewportMode} onChange={setViewportMode} />
+
+                <ScaleControl value={scale} onChange={setScale} />
+              </div>
+
+              {/* Center: URL bar */}
+              <div className="flex-1 mx-2 min-w-0 flex items-center justify-center">
+                <PreviewUrlInput
+                  baseHost={baseHost}
+                  currentPath={currentPath}
+                  onPathChange={handlePathSelect}
+                  isLoading={!isLoaded}
+                  className="max-w-[350px] w-full"
+                />
+              </div>
+
+              {/* Right: External link + Mode toggle + Close */}
+              <div className="flex items-center justify-end gap-1 flex-1">
+                <Button
+                  variant="ghost"
+                  className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
+                  onClick={() => window.open(previewUrl, "_blank")}
+                >
+                  <ExternalLinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+
+                {onClose && (
+                  <Button
+                    variant="ghost"
+                    className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
+                    onClick={onClose}
+                  >
+                    <IconDoubleChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </Button>
                 )}
-              />
-            </Button>
-
-            <ViewportToggle value={viewportMode} onChange={setViewportMode} />
-
-            <ScaleControl value={scale} onChange={setScale} />
-          </div>
-
-          {/* Center: URL bar */}
-          <div className="flex-1 mx-2 min-w-0 flex items-center justify-center">
-            <PreviewUrlInput
-              baseHost={baseHost}
-              currentPath={currentPath}
-              onPathChange={handlePathSelect}
-              isLoading={!isLoaded}
-              className="max-w-[350px] w-full"
-            />
-          </div>
-
-          {/* Right: External link + Mode toggle + Close */}
-          <div className="flex items-center justify-end gap-1 flex-1">
-            <Button
-              variant="ghost"
-              className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
-              onClick={() => window.open(previewUrl, "_blank")}
-            >
-              <ExternalLinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
-            </Button>
-
-            {onClose && (
-              <Button
-                variant="ghost"
-                className="h-7 w-7 p-0 hover:bg-muted transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] rounded-md"
-                onClick={onClose}
-              >
-                <IconDoubleChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 

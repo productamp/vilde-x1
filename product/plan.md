@@ -30,10 +30,11 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done |
 | 5 | New project flow | Create project → scaffold → install → preview | Done |
 | 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started |
-| 7 | Onboarding | Simplified setup for non-technical users | Not started |
-| 8 | Publishing | One-click deploy to live URL | Not started |
-| 9 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
-| 10 | Gemini support | Add Gemini as AI engine | Not started |
+| 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Not started |
+| 8 | Onboarding | Simplified setup for non-technical users | Not started |
+| 9 | Publishing | One-click deploy to live URL | Not started |
+| 10 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
+| 11 | Gemini support | Add Gemini as AI engine | Not started |
 
 ### Phase 0 — Setup
 
@@ -122,11 +123,25 @@ End-to-end flow for starting a new project. User clicks "New Project" → app sc
 
 Strip the developer feel. Make it consumer-grade.
 
-- [ ] **Clean default layout** — chat left, preview right, nothing else
+- [x] **Clean default layout** — chat left, preview right, global header above. Merged preview toolbar with tab pills into single row.
+- [x] **Details tab hidden** — "Details" tab removed in ProductVibe mode. Preview is default, Files tab still accessible.
+- [x] **Merged preview header** — pill tabs (Preview/Files) sit on the left, preview controls (refresh, viewport, scale, external link) on the right — single row, no separate tab bar when on Preview.
+- [x] **Scale control simplified** — replaced text input with preset-only dropdown selector.
+- [x] **Global header bar** — full-width header with traffic lights, product name, bottom divider. Window drag region.
 - [ ] **Hide dev UI** — git, terminal, MCP, PRs, worktrees, diff previews behind the flag
 - [ ] **Simplified message views** — hide tool calls and diffs, show only the conversation
 
-### Phase 7 — Onboarding
+### Phase 7 — Workspace-to-projects
+
+Adopt Lovable-style terminology and project management flow.
+
+- [ ] **Terminology migration** — replace user-facing "Workspace" copy with "Projects" across sidebar, headers, dialogs, and empty states
+- [ ] **Projects-first navigation** — make Projects the primary mental model (project switcher, recent projects, clear "New Project" entry)
+- [ ] **Project management UX** — simplify create, switch, rename, archive, and delete flows for non-technical users
+- [ ] **Project settings simplification** — focus on project name/path/status and hide developer-centric controls in `productVibeMode`
+- [ ] **Compatibility layer** — keep internal IDs/worktree internals stable while updating labels and UX
+
+### Phase 8 — Onboarding
 
 Make the first 60 seconds work for someone who's never used a terminal.
 
@@ -134,7 +149,7 @@ Make the first 60 seconds work for someone who's never used a terminal.
 - [ ] **API key setup** — guide user through getting and entering their key
 - [ ] **First project creation** — "What kind of website do you want?" → scaffold → preview
 
-### Phase 8 — Publishing
+### Phase 9 — Publishing
 
 The other half of the value prop. Users need their site on the internet.
 
@@ -142,7 +157,7 @@ The other half of the value prop. Users need their site on the internet.
 - [ ] **One-click publish** — from preview to live URL with minimal steps
 - [ ] **Update flow** — chat to change → preview → re-publish
 
-### Phase 9 — Scaffold optimisation
+### Phase 10 — Scaffold optimisation
 
 Improve the starter template based on what we've learned from real usage.
 
@@ -151,7 +166,7 @@ Improve the starter template based on what we've learned from real usage.
 - [ ] **Template variants** — multiple starter templates for different site types
 - [ ] **Reduce first-build time** — optimise dependencies, trim unused components, speed up `npm install`
 
-### Phase 10 — Gemini support
+### Phase 11 — Gemini support
 
 Add Gemini as an AI engine option. Claude Code and Codex are already supported.
 
@@ -178,10 +193,11 @@ Everything below is gated on `productVibeMode === true`.
 |---------|----------|------|--------|
 | Terminal sidebar (right) | Flag | `active-chat.tsx` | Don't render `<TerminalSidebar>`. Keep internal terminal for silent ops. |
 | Terminal bottom panel | Flag | `active-chat.tsx` | Don't render `<TerminalBottomPanelContent>` or `<ResizableBottomPanel>`. |
-| Details sidebar (widgets) | Flag | `details-sidebar.tsx` | Hide entire sidebar. No user-facing need for info/todo/plan/diff/mcp tabs. |
+| Details sidebar (widgets) | Rework | `details-sidebar.tsx` | Done. "Details" tab hidden. Preview is default tab, Files tab kept. Pill tabs + preview controls merged into single header row. Resize handle fixed (removed `overflow:hidden` that clipped it). |
 | Changes / diff panel | Flag | `active-chat.tsx` | Don't render `<ChangesPanel>`, `<DiffFullPageView>`, `<DiffSidebarHeader>`, `<DiffCenterPeekDialog>`. |
 | File viewer sidebar | Flag | `active-chat.tsx` | Don't render file tree or file search dialog. Disable `Cmd+Shift+K`. |
 | Sub-chats sidebar | Flag | `active-chat.tsx` | Hide. Non-technical users don't need parallel sub-chat threads. |
+| Preview close button | Flag | `active-chat.tsx`, `details-sidebar.tsx` | Done. Hide `>>` close button, disable click-to-close on resize handle, hide resize tooltip. Applies to both unified sidebar (`details-sidebar.tsx`) and standalone preview (`active-chat.tsx`). Preview stays permanently open. |
 
 ### Header and toolbar
 
@@ -190,9 +206,12 @@ Everything below is gated on `productVibeMode === true`.
 | Git branch selector | Flag | `active-chat.tsx` ~L1786 | Hide branch dropdown, fetch/review/PR actions in chat header. |
 | Workspace subtitle (repo • branch) | Flag | `active-chat.tsx` ~L4650 | Hide or replace with project name only. |
 | Worktree path indicator | Flag | `active-chat.tsx` ~L4763 | Already partially gated. Verify hidden. |
-| Terminal toggle button | Flag | `active-chat.tsx` | Hide `Cmd+J` terminal toggle from toolbar. |
+| Terminal toggle button | Flag | `sub-chat-selector.tsx`, `active-chat.tsx` | Done. Hide terminal button from chat header. Hide `Cmd+J` hotkey. |
 | File viewer toggle button | Flag | `active-chat.tsx` | Hide file explorer button from toolbar. |
-| Details sidebar toggle button | Flag | `active-chat.tsx` | Hide widget sidebar button from toolbar. |
+| Details sidebar toggle button | Flag | `active-chat.tsx` ~L7662 | Done. Hide details/terminal sidebar toggle from chat header. |
+| Token usage indicator | Flag | `chat-input-area.tsx` | Done. Hide `AgentContextIndicator` in ProductVibe mode. |
+| Model selector | Rework | `chat-input-area.tsx`, `agent-model-selector.tsx` | Done. Icon-only mode (`iconOnly` prop), moved to right side of input actions. |
+| Traffic lights (macOS) | Flag | `agents-layout.tsx`, `active-chat.tsx` | Done. Always visible in ProductVibe mode even when sidebar closed. Spacer added to chat header to prevent overlap. |
 
 ### Settings dialog
 
@@ -228,9 +247,10 @@ Everything below is gated on `productVibeMode === true`.
 | Workspaces panel (column 1) | Keep | `agents-sidebar.tsx` | Keep for now. Project selector + new project flow lives here. |
 | Chats panel (column 2) | Rework | `agents-content.tsx`, new component | Flag out the panel. Replace with a `CommandDialog` (shadcn) triggered by the existing clock icon in the chat header. Reuse the existing panel UI (search input, "New Chat" button, chat list items) inside the dialog — no redesign, just relocation. No separate `+` icon — clock is the single entry point for both history and creation. |
 | Chat header icons | Rework | `active-chat.tsx` | Left side: clock icon only (opens chat CommandDialog). Right side: settings gear, preview toggle. All dev icons (terminal, file viewer, details sidebar) flagged out. Icons are fixed — no shifting since panel 2 doesn't exist. |
-| Default layout | Rework | `active-chat.tsx`, layout atoms | Three-panel when sidebar open: workspaces (narrow), chat, preview. Two-panel when sidebar closed: chat, preview. No bottom panel, no right sidebars beyond preview. |
+| Default layout | Rework | `active-chat.tsx`, `agents-content.tsx`, layout atoms | Done. Three-panel when sidebar open: workspaces (narrow), chat, preview. Two-panel when sidebar closed: chat, preview. Chat min-width `min-w-72` (288px). Details sidebar max-width uncapped. Preview header background matches chat (`bg-background`). Scale control is preset-only dropdown. |
+| Global header bar | Rework | `product-vibe-header.tsx`, `agents-layout.tsx` | Done. Full-width header (`h-9`) with traffic lights + "ProductVibe" label + bottom divider. Window drag region. Sidebar/chat/preview render below it. Per-panel traffic light spacers and drag regions suppressed (`agents-sidebar.tsx`, `sub-chat-selector.tsx`). |
 | Preview auto-open | Rework | `active-chat.tsx` ~L5788 | Currently skips auto-open in ProductVibe mode. Invert: always auto-open preview when `productVibeMode`. |
-| Chat input | Rework | chat input component | Hide file attach, model selector, advanced options. Keep text input + send button. |
+| Chat input | Rework | `chat-input-area.tsx` | Done (partial). Token usage hidden. Model selector icon-only and moved to right. File attach still visible (keep for now — users may want to attach screenshots). |
 
 ### Hotkeys
 

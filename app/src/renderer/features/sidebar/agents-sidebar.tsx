@@ -1306,6 +1306,7 @@ const SidebarHeader = memo(function SidebarHeader({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const showOfflineFeatures = useAtomValue(showOfflineModeFeaturesAtom)
   const toggleSidebarHotkey = useResolvedHotkeyDisplay("toggle-sidebar")
+  const productVibeMode = useAtomValue(productVibeModeAtom)
 
   return (
     <div
@@ -1313,8 +1314,8 @@ const SidebarHeader = memo(function SidebarHeader({
       onMouseEnter={handleSidebarMouseEnter}
       onMouseLeave={handleSidebarMouseLeave}
     >
-      {/* Draggable area for window movement - background layer (hidden in fullscreen) */}
-      {isDesktop && !isFullscreen && (
+      {/* Draggable area for window movement - background layer (hidden in fullscreen, suppressed when global header handles it) */}
+      {isDesktop && !isFullscreen && !productVibeMode && (
         <div
           className="absolute inset-x-0 top-0 h-[32px] z-0"
           style={{
@@ -1325,12 +1326,14 @@ const SidebarHeader = memo(function SidebarHeader({
         />
       )}
 
-      {/* No-drag zone over native traffic lights */}
+      {/* No-drag zone over native traffic lights (suppressed when global header handles it) */}
+      {!productVibeMode && (
       <TrafficLights
         isFullscreen={isFullscreen}
         isDesktop={isDesktop}
         className="absolute left-[15px] top-[12px] z-20"
       />
+      )}
 
       {/* Close button - positioned at top right */}
       {!isMobileFullscreen && (
@@ -1367,8 +1370,10 @@ const SidebarHeader = memo(function SidebarHeader({
         </div>
       )}
 
-      {/* Spacer for macOS traffic lights */}
+      {/* Spacer for macOS traffic lights (suppressed when global header handles it) */}
+      {!productVibeMode && (
       <TrafficLightSpacer isFullscreen={isFullscreen} isDesktop={isDesktop} />
+      )}
 
       {/* Team dropdown - below traffic lights */}
       <div className="px-2 pt-2 pb-2">

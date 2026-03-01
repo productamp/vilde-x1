@@ -23,6 +23,7 @@ import { selectedAgentChatIdAtom, selectedProjectAtom, selectedDraftIdAtom, show
 import { trpc } from "../../lib/trpc"
 import { useAgentsHotkeys } from "../agents/lib/agents-hotkeys-manager"
 import { toggleSearchAtom } from "../agents/search"
+import { productVibeModeAtom } from "../../lib/product-vibe"
 import { ClaudeLoginModal } from "../../components/dialogs/claude-login-modal"
 import { CodexLoginModal } from "../../components/dialogs/codex-login-modal"
 import { TooltipProvider } from "../../components/ui/tooltip"
@@ -35,6 +36,7 @@ import { useUpdateChecker } from "../../lib/hooks/use-update-checker"
 import { useAgentSubChatStore } from "../agents/stores/sub-chat-store"
 import { QueueProcessor } from "../agents/components/queue-processor"
 import { SettingsSidebar } from "../settings/settings-sidebar"
+import { ProductVibeHeader } from "./product-vibe-header"
 
 // ============================================================================
 // Constants
@@ -93,6 +95,7 @@ export function AgentsLayout() {
 
   const [sidebarOpen, setSidebarOpen] = useAtom(agentsSidebarOpenAtom)
   const [sidebarWidth, setSidebarWidth] = useAtom(agentsSidebarWidthAtom)
+  const productVibeMode = useAtomValue(productVibeModeAtom)
   const setSettingsActiveTab = useSetAtom(agentsSettingsDialogActiveTabAtom)
   const setSettingsDialogOpen = useSetAtom(agentsSettingsDialogOpenAtom)
   const desktopView = useAtomValue(desktopViewAtom)
@@ -159,8 +162,8 @@ export function AgentsLayout() {
     )
       return
 
-    window.desktopApi.setTrafficLightVisibility(sidebarOpen)
-  }, [sidebarOpen, isDesktop, isFullscreen, isSettingsView])
+    window.desktopApi.setTrafficLightVisibility(productVibeMode || sidebarOpen)
+  }, [sidebarOpen, isDesktop, isFullscreen, isSettingsView, productVibeMode])
 
   const setChatId = useAgentSubChatStore((state) => state.setChatId)
 
@@ -307,6 +310,8 @@ export function AgentsLayout() {
       <div className="flex flex-col w-full h-full relative overflow-hidden bg-background select-none">
         {/* Windows Title Bar (only shown on Windows with frameless window) */}
         <WindowsTitleBar />
+        {/* ProductVibe global header - drag region with traffic lights + product name */}
+        {productVibeMode && <ProductVibeHeader />}
         <div className="flex flex-1 overflow-hidden">
           {/* Left Sidebar - switches between chat list and settings nav */}
           <ResizableSidebar
