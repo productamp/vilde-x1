@@ -42,6 +42,7 @@ import { McpWidget } from "./sections/mcp-widget"
 import { FilesTab, type FilesTabHandle } from "./sections/files-tab"
 import type { ParsedDiffFile } from "./types"
 import { fileViewerOpenAtomFamily, type AgentMode } from "../agents/atoms"
+import { FileViewerSidebar } from "../file-viewer"
 import { productVibeModeAtom } from "@/lib/product-vibe"
 import { AgentPreview } from "../agents/ui/agent-preview"
 import {
@@ -251,9 +252,27 @@ export function DetailsSidebar({
   const filesTabRef = useRef<FilesTabHandle>(null)
   const [filesAllExpanded, setFilesAllExpanded] = useState(false)
 
-  // Current file open in file viewer (for tree highlight sync)
+  // Current file open in file viewer (for tree highlight sync + inline viewer)
   const fileViewerAtom = useMemo(() => fileViewerOpenAtomFamily(chatId), [chatId])
-  const fileViewerPath = useAtomValue(fileViewerAtom)
+  const [fileViewerPath, setFileViewerPath] = useAtom(fileViewerAtom)
+
+  // Resizable file tree width (inline files panel)
+  const [fileTreeWidth, setFileTreeWidth] = useState(192) // w-48
+  const handleFileTreeResize = useCallback((e: React.PointerEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = fileTreeWidth
+    const onMove = (ev: PointerEvent) => {
+      const newWidth = Math.max(140, Math.min(500, startWidth + ev.clientX - startX))
+      setFileTreeWidth(newWidth)
+    }
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove)
+      document.removeEventListener("pointerup", onUp)
+    }
+    document.addEventListener("pointermove", onMove)
+    document.addEventListener("pointerup", onUp)
+  }, [fileTreeWidth])
 
   // Settings dialog atoms for MCP settings
   const setSettingsOpen = useSetAtom(agentsSettingsDialogOpenAtom)
@@ -335,7 +354,7 @@ export function DetailsSidebar({
       <div className="flex flex-col h-full min-w-0 overflow-hidden">
         {/* Header with pill tabs — hidden when merged into preview header in ProductVibe mode */}
         {!(productVibeMode && activeTab === "preview") && (
-        <div className="flex items-center justify-between px-2 h-10 bg-tl-background flex-shrink-0 border-b border-border/50">
+        <div className="flex items-center justify-between px-2 h-10 bg-background flex-shrink-0 border-b border-border/50">
           <div className="flex items-center gap-2">
             {!productVibeMode && (
             <Tooltip>
@@ -562,14 +581,46 @@ export function DetailsSidebar({
             }
           })}
         </div>
-        <FilesTab
-          ref={filesTabRef}
-          worktreePath={worktreePath}
-          onSelectFile={onOpenFile ?? noopSelectFile}
-          onExpandedStateChange={setFilesAllExpanded}
-          currentViewerFilePath={fileViewerPath}
-          className={cn("flex-1", activeTab !== "files" && "hidden")}
-        />
+        {/* Files tab — in ProductVibe mode, file tree + inline viewer side by side */}
+        {productVibeMode ? (
+          <div className={cn("flex-1 flex overflow-hidden", activeTab !== "files" && "hidden")}>
+            <FilesTab
+              ref={filesTabRef}
+              worktreePath={worktreePath}
+              onSelectFile={onOpenFile ?? noopSelectFile}
+              onExpandedStateChange={setFilesAllExpanded}
+              currentViewerFilePath={fileViewerPath}
+              className="flex-shrink-0 border-r border-border"
+              style={{ width: fileTreeWidth }}
+            />
+            {/* Resize handle */}
+            <div
+              className="w-1 flex-shrink-0 cursor-col-resize hover:bg-accent active:bg-accent-foreground/20 transition-colors"
+              onPointerDown={handleFileTreeResize}
+            />
+            {fileViewerPath && worktreePath ? (
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <FileViewerSidebar
+                  filePath={fileViewerPath}
+                  projectPath={worktreePath}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                Select a file to view
+              </div>
+            )}
+          </div>
+        ) : (
+          <FilesTab
+            ref={filesTabRef}
+            worktreePath={worktreePath}
+            onSelectFile={onOpenFile ?? noopSelectFile}
+            onExpandedStateChange={setFilesAllExpanded}
+            currentViewerFilePath={fileViewerPath}
+            className={cn("flex-1", activeTab !== "files" && "hidden")}
+          />
+        )}
         {previewBaseUrl && (
           <div className={cn("flex-1 overflow-hidden", activeTab !== "preview" && "hidden")}>
             <AgentPreview

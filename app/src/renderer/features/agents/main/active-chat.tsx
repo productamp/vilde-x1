@@ -4974,8 +4974,9 @@ export function ChatView({
   const [isTerminalSidebarOpen, setIsTerminalSidebarOpen] = useAtom(terminalSidebarAtom)
   const terminalDisplayMode = useAtomValue(terminalDisplayModeAtom)
 
-  // Keyboard shortcut: Cmd+J to toggle terminal
+  // Keyboard shortcut: Cmd+J to toggle terminal (disabled in ProductVibe mode)
   useEffect(() => {
+    if (productVibeMode) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.metaKey &&
@@ -4992,7 +4993,7 @@ export function ChatView({
 
     window.addEventListener("keydown", handleKeyDown, true)
     return () => window.removeEventListener("keydown", handleKeyDown, true)
-  }, [isTerminalSidebarOpen, setIsTerminalSidebarOpen])
+  }, [isTerminalSidebarOpen, setIsTerminalSidebarOpen, productVibeMode])
 
   // Mutual exclusion: Details sidebar vs Plan/Terminal/Diff(side-peek) sidebars
   // When one opens, close the conflicting ones and remember for restoration
@@ -8148,56 +8149,8 @@ Make sure to preserve all functionality from both branches when resolving confli
           </ResizableSidebar>
         )}
 
-        {/* File Viewer - opens when a file is clicked */}
-        {!isMobileFullscreen && fileViewerPath && worktreePath && fileViewerDisplayMode === "side-peek" && (
-          <ResizableSidebar
-            isOpen={!!fileViewerPath}
-            onClose={() => setFileViewerPath(null)}
-            widthAtom={fileViewerSidebarWidthAtom}
-            minWidth={350}
-            maxWidth={900}
-            side="right"
-            animationDuration={0}
-            initialWidth={0}
-            exitWidth={0}
-            showResizeTooltip={true}
-            className="bg-tl-background border-l"
-            style={{ borderLeftWidth: "0.5px" }}
-          >
-            <FileViewerSidebar
-              filePath={fileViewerPath}
-              projectPath={worktreePath}
-              onClose={() => setFileViewerPath(null)}
-            />
-          </ResizableSidebar>
-        )}
-        {fileViewerPath && worktreePath && fileViewerDisplayMode === "center-peek" && (
-          <DiffCenterPeekDialog
-            isOpen={!!fileViewerPath}
-            onClose={() => setFileViewerPath(null)}
-          >
-            <FileViewerSidebar
-              filePath={fileViewerPath}
-              projectPath={worktreePath}
-              onClose={() => setFileViewerPath(null)}
-            />
-          </DiffCenterPeekDialog>
-        )}
-        {fileViewerPath && worktreePath && fileViewerDisplayMode === "full-page" && (
-          <DiffFullPageView
-            isOpen={!!fileViewerPath}
-            onClose={() => setFileViewerPath(null)}
-          >
-            <FileViewerSidebar
-              filePath={fileViewerPath}
-              projectPath={worktreePath}
-              onClose={() => setFileViewerPath(null)}
-            />
-          </DiffFullPageView>
-        )}
-
-        {/* Terminal Sidebar - shows when worktree exists (desktop only) */}
-        {worktreePath && (
+        {/* Terminal Sidebar - shows when worktree exists (desktop only), hidden in ProductVibe mode */}
+        {!productVibeMode && worktreePath && (
           <TerminalSidebar
             chatId={chatId}
             scopeKey={terminalScopeKey}
@@ -8258,10 +8211,58 @@ Make sure to preserve all functionality from both branches when resolving confli
             isRemoteChat={!!remoteInfo}
           />
         )}
+
+        {/* File Viewer - standalone sidebar (non-ProductVibe mode only; in PV mode it's inline in Files tab) */}
+        {!productVibeMode && !isMobileFullscreen && fileViewerPath && worktreePath && fileViewerDisplayMode === "side-peek" && (
+          <ResizableSidebar
+            isOpen={!!fileViewerPath}
+            onClose={() => setFileViewerPath(null)}
+            widthAtom={fileViewerSidebarWidthAtom}
+            minWidth={350}
+            maxWidth={900}
+            side="right"
+            animationDuration={0}
+            initialWidth={0}
+            exitWidth={0}
+            showResizeTooltip={true}
+            className="bg-tl-background border-l"
+            style={{ borderLeftWidth: "0.5px" }}
+          >
+            <FileViewerSidebar
+              filePath={fileViewerPath}
+              projectPath={worktreePath}
+              onClose={() => setFileViewerPath(null)}
+            />
+          </ResizableSidebar>
+        )}
+        {!productVibeMode && fileViewerPath && worktreePath && fileViewerDisplayMode === "center-peek" && (
+          <DiffCenterPeekDialog
+            isOpen={!!fileViewerPath}
+            onClose={() => setFileViewerPath(null)}
+          >
+            <FileViewerSidebar
+              filePath={fileViewerPath}
+              projectPath={worktreePath}
+              onClose={() => setFileViewerPath(null)}
+            />
+          </DiffCenterPeekDialog>
+        )}
+        {!productVibeMode && fileViewerPath && worktreePath && fileViewerDisplayMode === "full-page" && (
+          <DiffFullPageView
+            isOpen={!!fileViewerPath}
+            onClose={() => setFileViewerPath(null)}
+          >
+            <FileViewerSidebar
+              filePath={fileViewerPath}
+              projectPath={worktreePath}
+              onClose={() => setFileViewerPath(null)}
+            />
+          </DiffFullPageView>
+        )}
       </div>
 
-      {/* Terminal Bottom Panel — renders below the main row when displayMode is "bottom" */}
-      {terminalDisplayMode === "bottom" && worktreePath && !isMobileFullscreen && (
+      {/* Terminal Bottom Panel — renders below the main row when displayMode is "bottom", hidden in ProductVibe mode */}
+      {!productVibeMode && terminalDisplayMode === "bottom" && worktreePath && !isMobileFullscreen && (
         <ResizableBottomPanel
           isOpen={isTerminalSidebarOpen}
           onClose={() => setIsTerminalSidebarOpen(false)}

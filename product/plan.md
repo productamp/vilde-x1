@@ -29,12 +29,14 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 3 | Scaffold starter | Default project template (shadcn) | Done |
 | 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done |
 | 5 | New project flow | Create project → scaffold → install → preview | Done |
-| 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started |
+| 6 | UI polish and simplification | Hide dev UI | Done |
+| 6b | File viewer layout simplification | Merge file viewer into the same panel | Done |
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Not started |
 | 8 | Onboarding | Simplified setup for non-technical users | Not started |
 | 9 | Publishing | One-click deploy to live URL | Not started |
 | 10 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
-| 11 | Gemini support | Add Gemini as AI engine | Not started |
+| 11 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
+| 12 | Gemini support | Add Gemini as AI engine | Not started |
 
 ### Phase 0 — Setup
 
@@ -128,8 +130,21 @@ Strip the developer feel. Make it consumer-grade.
 - [x] **Merged preview header** — pill tabs (Preview/Files) sit on the left, preview controls (refresh, viewport, scale, external link) on the right — single row, no separate tab bar when on Preview.
 - [x] **Scale control simplified** — replaced text input with preset-only dropdown selector.
 - [x] **Global header bar** — full-width header with traffic lights, product name, bottom divider. Window drag region.
-- [ ] **Hide dev UI** — git, terminal, MCP, PRs, worktrees, diff previews behind the flag
-- [ ] **Simplified message views** — hide tool calls and diffs, show only the conversation
+- [x] **Hide terminal sidebar** — gate `<TerminalSidebar>` behind `!productVibeMode`
+- [x] **Hide terminal bottom panel** — gate `<ResizableBottomPanel>` behind `!productVibeMode`
+- [x] **Disable `Cmd+J`** — terminal toggle hotkey disabled in productVibeMode
+- [x] **Disable `Cmd+P`** — file search hotkey disabled in productVibeMode
+
+### Phase 6b — File viewer layout simplification
+
+Simplify file browsing by consolidating the file viewer into one panel.
+
+- [x] **Single-panel merge** — file tree (left) and file content viewer (right) render inside the same Files tab panel. No separate file viewer sidebar in ProductVibe mode.
+- [x] **Unified panel behavior** — single header with Preview/Files pill tabs. File viewer header has "Open" dropdown (Finder, Terminal, Copy Path) and `...` options menu (Word Wrap, Minimap, Line Numbers). Minimap and line numbers default to off.
+- [x] **Resizable file tree** — draggable divider between file tree and content viewer (default 192px / `w-48`, min 140px, max 500px).
+- [x] **State continuity** — both tabs always mounted (hidden via CSS), preserving scroll position and search state when switching between Preview and Files.
+- [x] **Toggle cleanup** — standalone file viewer sidebar, center-peek, and full-page modes disabled in ProductVibe mode. Close button and mode switcher hidden. File viewer is persistent (no Escape dismiss).
+- [x] **Open in Terminal** — added `openInTerminal` tRPC endpoint (`open -a Terminal <dir>`) for file viewer context actions.
 
 ### Phase 7 — Workspace-to-projects
 
@@ -166,7 +181,23 @@ Improve the starter template based on what we've learned from real usage.
 - [ ] **Template variants** — multiple starter templates for different site types
 - [ ] **Reduce first-build time** — optimise dependencies, trim unused components, speed up `npm install`
 
-### Phase 11 — Gemini support
+### Phase 11 — UI and settings simplification
+
+Simplify message views and hide developer-facing settings.
+
+**Message views:**
+- [ ] **Tool call blocks** — collapse all tool calls to a single subtle "Working..." indicator (no file names, diffs, shell output)
+- [ ] **MCP tool calls** — hide entirely
+- [ ] **File mentions** — hide inline file path references
+
+**Settings tabs:**
+- [ ] **Hide developer tabs** — MCP, Debug, Plugins, Skills, Custom Agents tabs hidden in `productVibeMode`
+- [ ] **Simplify Models tab** — show only model picker, hide migration UI and advanced config
+- [ ] **Simplify Beta tab** — show version info only, hide automations and subscription checks
+- [ ] **Simplify Profile tab** — hide team features, show name/avatar only
+- [ ] **Projects tab** — verify worktree section is already gated
+
+### Phase 12 — Gemini support
 
 Add Gemini as an AI engine option. Claude Code and Codex are already supported.
 
@@ -213,33 +244,6 @@ Everything below is gated on `productVibeMode === true`.
 | Model selector | Rework | `chat-input-area.tsx`, `agent-model-selector.tsx` | Done. Icon-only mode (`iconOnly` prop), moved to right side of input actions. |
 | Traffic lights (macOS) | Flag | `agents-layout.tsx`, `active-chat.tsx` | Done. Always visible in ProductVibe mode even when sidebar closed. Spacer added to chat header to prevent overlap. |
 
-### Settings dialog
-
-| Tab | Strategy | File | Detail |
-|-----|----------|------|--------|
-| MCP | Flag | `settings-content.tsx` | Hide tab entirely. |
-| Debug | Flag | `settings-content.tsx` | Hide tab entirely (keep ProductVibe toggle accessible via other means or dev shortcut). |
-| Plugins | Flag | `settings-content.tsx` | Hide tab entirely. |
-| Skills | Flag | `settings-content.tsx` | Hide tab entirely. |
-| Custom Agents | Flag | `settings-content.tsx` | Hide tab entirely. |
-| Projects (worktree section) | Flag | `agents-project-worktree-tab.tsx` L448 | Already gated. Verify. |
-| Models | Rework | `agents-models-tab.tsx` | Show only model picker. Hide migration UI, advanced config. |
-| Beta | Rework | `agents-beta-tab.tsx` | Show version info only. Hide automations, subscription checks. |
-| Appearance | Keep | — | User-facing. No change. |
-| Preferences | Keep | — | User-facing. No change. |
-| Keyboard | Keep | — | User-facing. No change. |
-| Profile | Rework | `agents-profile-tab.tsx` | Hide team features. Show name/avatar only. |
-
-### Chat messages
-
-| Element | Strategy | File | Detail |
-|---------|----------|------|--------|
-| Tool call blocks | Rework | `assistant-message-item.tsx`, `agent-tool-call.tsx` | Collapse all tool calls to a single subtle "Working..." indicator. No file names, no diffs, no shell output. |
-| MCP tool calls | Flag | `agent-mcp-tool-call.tsx` | Hide entirely (subset of above). |
-| File mentions | Flag | message rendering | Hide inline file path references. |
-| AI text responses | Keep | `chat-markdown-renderer.tsx` | Show as-is. This is the conversation. |
-| User messages | Keep | — | Show as-is. |
-
 ### Layout
 
 | Element | Strategy | File | Detail |
@@ -263,5 +267,6 @@ Everything below is gated on `productVibeMode === true`.
 ### Not in scope (Phase 6)
 
 - Blog content support — moved to verification. Template from Phase 3 already supports it. Just confirm AI instructions guide correct generation.
-- Onboarding — Phase 7.
-- New settings UI design — not needed yet, flagging tabs is enough.
+- Onboarding — Phase 8.
+- Message view simplification — moved to Phase 11.
+- Settings dialog simplification — moved to Phase 11.

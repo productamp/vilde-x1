@@ -117,6 +117,14 @@ export const externalRouter = router({
 			return { success: true, editor: "default" };
 		}),
 
+	openInTerminal: publicProcedure
+		.input(z.string())
+		.mutation(async ({ input: dirPath }) => {
+			const expandedPath = expandTilde(dirPath);
+			await spawnAsync("open", ["-a", "Terminal", expandedPath]);
+			return { success: true };
+		}),
+
 	openExternal: publicProcedure
 		.input(z.string())
 		.mutation(async ({ input: url }) => {

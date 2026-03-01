@@ -117,6 +117,7 @@ export interface AgentsHotkeysManagerConfig {
   customHotkeysConfig?: CustomHotkeysConfig
   // Feature flags
   betaKanbanEnabled?: boolean
+  productVibeMode?: boolean
 }
 
 export interface UseAgentsHotkeysOptions {
@@ -265,13 +266,15 @@ export function useAgentsHotkeys(
         }
       }
 
-      // Check file-search hotkey (Cmd+P)
-      const fileSearchHotkey = getHotkeyForAction("file-search")
-      if (fileSearchHotkey && matchesHotkey(e, fileSearchHotkey)) {
-        e.preventDefault()
-        e.stopPropagation()
-        handleHotkeyAction("file-search")
-        return
+      // Check file-search hotkey (Cmd+P) — disabled in ProductVibe mode
+      if (!config.productVibeMode) {
+        const fileSearchHotkey = getHotkeyForAction("file-search")
+        if (fileSearchHotkey && matchesHotkey(e, fileSearchHotkey)) {
+          e.preventDefault()
+          e.stopPropagation()
+          handleHotkeyAction("file-search")
+          return
+        }
       }
 
       // Check open-kanban hotkey (only if feature is enabled)

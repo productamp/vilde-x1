@@ -41,6 +41,7 @@ interface FilesTabProps {
   /** Absolute path of the file currently open in file viewer (for highlight sync) */
   currentViewerFilePath?: string | null
   className?: string
+  style?: React.CSSProperties
 }
 
 export interface FilesTabHandle {
@@ -323,6 +324,7 @@ export const FilesTab = memo(forwardRef<FilesTabHandle, FilesTabProps>(function 
   onExpandedStateChange,
   currentViewerFilePath,
   className,
+  style,
 }, ref) {
   // activePath = file currently open in viewer (secondary highlight), derived from prop
   const activePath = useMemo(() => {
@@ -729,8 +731,8 @@ export const FilesTab = memo(forwardRef<FilesTabHandle, FilesTabProps>(function 
   }
 
   return (
-    <div className={cn("flex flex-col h-full min-w-0 overflow-hidden", className)}>
-      <div className="flex-1 overflow-y-auto pb-2">
+    <div className={cn("flex flex-col h-full min-w-0 overflow-hidden", className)} style={style}>
+      <div className="flex-1 overflow-y-auto pb-2 pl-2 pt-1">
         {tree.length === 0 ? (
           <div className="px-2 py-4 text-center">
             <p className="text-xs text-muted-foreground">Loading files...</p>

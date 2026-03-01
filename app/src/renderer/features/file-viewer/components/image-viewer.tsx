@@ -38,7 +38,7 @@ const FILE_VIEWER_MODES = [
 interface ImageViewerProps {
   filePath: string
   projectPath: string
-  onClose: () => void
+  onClose?: () => void
 }
 
 export function ImageViewer({
@@ -74,48 +74,52 @@ export function ImageViewer({
       <div className="@container flex items-center justify-between px-2 h-10 border-b border-border/50 bg-background flex-shrink-0">
         {/* Left side: Close + mode switcher + file info */}
         <div className="flex items-center gap-1 min-w-0 flex-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
-            onClick={onClose}
-          >
-            {displayMode === "side-peek" ? (
-              <IconCloseSidebarRight className="size-4 text-muted-foreground" />
-            ) : (
-              <X className="size-4 text-muted-foreground" />
-            )}
-          </Button>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
+              onClick={onClose}
+            >
+              {displayMode === "side-peek" ? (
+                <IconCloseSidebarRight className="size-4 text-muted-foreground" />
+              ) : (
+                <X className="size-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
           {/* Display mode switcher */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
-              >
-                {(() => {
-                  const CurrentIcon = FILE_VIEWER_MODES.find((m) => m.value === displayMode)?.Icon ?? IconSidePeek
-                  return <CurrentIcon className="size-4 text-muted-foreground" />
-                })()}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[140px]">
-              {FILE_VIEWER_MODES.map(({ value, label, Icon }) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => setDisplayMode(value)}
-                  className="flex items-center gap-2"
+          {onClose && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
                 >
-                  <Icon className="size-4 text-muted-foreground" />
-                  <span className="flex-1">{label}</span>
-                  {displayMode === value && (
-                    <Check className="size-4 text-muted-foreground ml-auto" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  {(() => {
+                    const CurrentIcon = FILE_VIEWER_MODES.find((m) => m.value === displayMode)?.Icon ?? IconSidePeek
+                    return <CurrentIcon className="size-4 text-muted-foreground" />
+                  })()}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[140px]">
+                {FILE_VIEWER_MODES.map(({ value, label, Icon }) => (
+                  <DropdownMenuItem
+                    key={value}
+                    onClick={() => setDisplayMode(value)}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon className="size-4 text-muted-foreground" />
+                    <span className="flex-1">{label}</span>
+                    {displayMode === value && (
+                      <Check className="size-4 text-muted-foreground ml-auto" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <div className="flex items-center gap-2 min-w-0 flex-1 ml-1">
             {(() => {
               const Icon = getFileIconByExtension(filePath)

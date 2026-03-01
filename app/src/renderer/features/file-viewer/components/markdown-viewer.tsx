@@ -47,7 +47,7 @@ import { getFileName } from "../utils/file-utils"
 interface MarkdownViewerProps {
   filePath: string
   projectPath: string
-  onClose: () => void
+  onClose?: () => void
 }
 
 export function MarkdownViewer({
@@ -109,6 +109,7 @@ export function MarkdownViewer({
   )
 
   useEffect(() => {
+    if (!onClose) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault()
@@ -222,7 +223,7 @@ function Header({
   filePath: string
   showPreview: boolean
   onToggleView: () => void
-  onClose: () => void
+  onClose?: () => void
   content?: string
 }) {
   const Icon = getFileIconByExtension(filePath)
@@ -243,19 +244,22 @@ function Header({
     <div className="@container flex items-center justify-between px-2 h-10 border-b border-border/50 bg-background flex-shrink-0">
       {/* Left side: Close + mode switcher + file info */}
       <div className="flex items-center gap-1 min-w-0 flex-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
-          onClick={onClose}
-        >
-          {displayMode === "side-peek" ? (
-            <IconCloseSidebarRight className="size-4 text-muted-foreground" />
-          ) : (
-            <X className="size-4 text-muted-foreground" />
-          )}
-        </Button>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
+            onClick={onClose}
+          >
+            {displayMode === "side-peek" ? (
+              <IconCloseSidebarRight className="size-4 text-muted-foreground" />
+            ) : (
+              <X className="size-4 text-muted-foreground" />
+            )}
+          </Button>
+        )}
         {/* Display mode switcher */}
+        {onClose && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -285,6 +289,7 @@ function Header({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        )}
         <div className="flex items-center gap-2 min-w-0 flex-1 ml-1">
           {Icon && <Icon className="h-3.5 w-3.5 flex-shrink-0" />}
           <span className="text-sm font-medium truncate">{fileName}</span>

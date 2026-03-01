@@ -13,6 +13,9 @@ import {
   Map,
   Check,
   X,
+  FolderOpen,
+  TerminalSquare,
+  Copy,
 } from "lucide-react"
 import { getFileIconByExtension } from "../../agents/mentions/agents-file-mention"
 import {
@@ -22,7 +25,6 @@ import {
   IconFullPage,
   IconLineNumbers,
 } from "@/components/ui/icons"
-import { Kbd } from "@/components/ui/kbd"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -35,14 +37,12 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { ViewerErrorBoundary } from "@/components/ui/error-boundary"
 import { trpc } from "@/lib/trpc"
 import { preferredEditorAtom } from "@/lib/atoms"
-import { useResolvedHotkeyDisplay } from "@/lib/hotkeys"
-import { APP_META } from "../../../../shared/external-apps"
-import { CopyButton } from "../../agents/ui/message-action-buttons"
-import { EDITOR_ICONS } from "@/lib/editor-icons"
+import { toast } from "sonner"
 import {
   fileViewerWordWrapAtom,
   fileViewerMinimapAtom,
@@ -61,7 +61,7 @@ import { MarkdownViewer } from "./markdown-viewer"
 interface FileViewerSidebarProps {
   filePath: string
   projectPath: string
-  onClose: () => void
+  onClose?: () => void
 }
 
 function FileIcon({ filePath }: { filePath: string }) {
@@ -142,7 +142,7 @@ function UnsupportedViewer({
   onClose,
 }: {
   filePath: string
-  onClose: () => void
+  onClose?: () => void
 }) {
   const fileName = getFileName(filePath)
   const [displayMode, setDisplayMode] = useAtom(fileViewerDisplayModeAtom)
@@ -152,22 +152,26 @@ function UnsupportedViewer({
       <div className="flex items-center justify-between px-2 h-10 border-b border-border/50 bg-background flex-shrink-0">
         <div className="flex items-center gap-1 min-w-0 flex-1">
           {/* Close + mode switcher on the left */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
-            onClick={onClose}
-          >
-            {displayMode === "side-peek" ? (
-              <IconCloseSidebarRight className="size-4 text-muted-foreground" />
-            ) : (
-              <X className="size-4 text-muted-foreground" />
-            )}
-          </Button>
-          <FileViewerModeSwitcher
-            mode={displayMode}
-            onModeChange={setDisplayMode}
-          />
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
+              onClick={onClose}
+            >
+              {displayMode === "side-peek" ? (
+                <IconCloseSidebarRight className="size-4 text-muted-foreground" />
+              ) : (
+                <X className="size-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
+          {onClose && (
+            <FileViewerModeSwitcher
+              mode={displayMode}
+              onModeChange={setDisplayMode}
+            />
+          )}
           <div className="flex items-center gap-2 min-w-0 flex-1 ml-1">
             <FileIcon filePath={filePath} />
             <span className="text-sm font-medium truncate" title={filePath}>
@@ -194,45 +198,58 @@ function CodeViewerHeader({
 }: {
   fileName: string
   filePath: string
-  onClose: () => void
+  onClose?: () => void
   content?: string | null
 }) {
   const [wordWrap, setWordWrap] = useAtom(fileViewerWordWrapAtom)
   const [minimap, setMinimap] = useAtom(fileViewerMinimapAtom)
   const [lineNumbers, setLineNumbers] = useAtom(fileViewerLineNumbersAtom)
   const [displayMode, setDisplayMode] = useAtom(fileViewerDisplayModeAtom)
-  const preferredEditor = useAtomValue(preferredEditorAtom)
-  const editorMeta = APP_META[preferredEditor]
-  const openInAppMutation = trpc.external.openInApp.useMutation()
-  const openInEditorHotkey = useResolvedHotkeyDisplay("open-file-in-editor")
+  const openInFinderMutation = trpc.external.openInFinder.useMutation()
+  const openInTerminalMutation = trpc.external.openInTerminal.useMutation()
 
-  const handleOpenInEditor = useCallback(() => {
-    const absolutePath = filePath.startsWith("/") ? filePath : undefined
+  const absolutePath = filePath.startsWith("/") ? filePath : undefined
+  const dirPath = absolutePath ? absolutePath.substring(0, absolutePath.lastIndexOf("/")) : undefined
+
+  const handleRevealInFinder = useCallback(() => {
+    if (absolutePath) openInFinderMutation.mutate(absolutePath)
+  }, [absolutePath, openInFinderMutation])
+
+  const handleOpenTerminal = useCallback(() => {
+    if (dirPath) openInTerminalMutation.mutate(dirPath)
+  }, [dirPath, openInTerminalMutation])
+
+  const handleCopyPath = useCallback(() => {
     if (absolutePath) {
-      openInAppMutation.mutate({ path: absolutePath, app: preferredEditor })
+      navigator.clipboard.writeText(absolutePath)
+      toast.success("Path copied", { description: absolutePath })
     }
-  }, [filePath, preferredEditor, openInAppMutation])
+  }, [absolutePath])
 
   return (
     <div className="@container flex items-center justify-between px-2 h-10 border-b border-border/50 bg-background flex-shrink-0">
       {/* Left side: Close button + mode switcher + file info */}
       <div className="flex items-center gap-1 min-w-0 flex-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
-          onClick={onClose}
-        >
-          {displayMode === "side-peek" ? (
-            <IconCloseSidebarRight className="size-4 text-muted-foreground" />
-          ) : (
-            <X className="size-4 text-muted-foreground" />
-          )}
-        </Button>
-        <FileViewerModeSwitcher
-          mode={displayMode}
-          onModeChange={setDisplayMode}
-        />
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 flex-shrink-0 hover:bg-foreground/10"
+            onClick={onClose}
+          >
+            {displayMode === "side-peek" ? (
+              <IconCloseSidebarRight className="size-4 text-muted-foreground" />
+            ) : (
+              <X className="size-4 text-muted-foreground" />
+            )}
+          </Button>
+        )}
+        {onClose && (
+          <FileViewerModeSwitcher
+            mode={displayMode}
+            onModeChange={setDisplayMode}
+          />
+        )}
         <div className="flex items-center gap-2 min-w-0 flex-1 ml-1">
           <FileIcon filePath={filePath} />
           <span className="text-sm font-medium truncate" title={filePath}>
@@ -241,46 +258,36 @@ function CodeViewerHeader({
         </div>
       </div>
       {/* Right side: Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {/* Open in editor */}
-        <Tooltip delayDuration={500}>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={handleOpenInEditor}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer rounded-md px-1.5 py-1 hover:bg-accent hover:text-accent-foreground transition-colors"
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        {/* Open dropdown — Finder, Terminal, Copy Path */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/10"
             >
-              <span className="hidden @[400px]:inline">Open in</span>
-              {EDITOR_ICONS[preferredEditor] && (
-                <img
-                  src={EDITOR_ICONS[preferredEditor]}
-                  alt=""
-                  className="h-3.5 w-3.5 flex-shrink-0"
-                />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" showArrow={false}>
-            Open in {editorMeta.label}
-            {openInEditorHotkey && <Kbd className="normal-case font-sans">{openInEditorHotkey}</Kbd>}
-          </TooltipContent>
-        </Tooltip>
+              Open
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={handleRevealInFinder}>
+              <FolderOpen className="mr-2 h-3.5 w-3.5" />
+              Reveal in Finder
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleOpenTerminal}>
+              <TerminalSquare className="mr-2 h-3.5 w-3.5" />
+              Open in Terminal
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleCopyPath}>
+              <Copy className="mr-2 h-3.5 w-3.5" />
+              Copy Path
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        {/* Copy button */}
-        {content && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <CopyButton text={content} />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" showArrow={false}>
-              Copy file content
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Options menu */}
+        {/* Options menu — viewer settings */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -471,7 +478,7 @@ function CodeViewer({
 }: {
   filePath: string
   projectPath: string
-  onClose: () => void
+  onClose?: () => void
 }) {
   const fileName = getFileName(filePath)
   const language = getMonacoLanguage(filePath)
@@ -529,6 +536,7 @@ function CodeViewer({
           setContextMenu(null)
           return
         }
+        if (!onClose) return
         // Don't close viewer if Monaco's find widget is open — let Monaco handle Escape
         const findWidget = containerRef.current?.querySelector(".find-widget.visible")
         if (findWidget) return

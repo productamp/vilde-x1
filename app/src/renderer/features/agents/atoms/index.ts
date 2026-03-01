@@ -1087,7 +1087,7 @@ export const fileViewerWordWrapAtom = atomWithStorage<boolean>(
 // File viewer minimap preference (persisted)
 export const fileViewerMinimapAtom = atomWithStorage<boolean>(
   "agents:fileViewerMinimap",
-  true,
+  false,
   undefined,
   { getOnInit: true },
 )
@@ -1095,7 +1095,7 @@ export const fileViewerMinimapAtom = atomWithStorage<boolean>(
 // File viewer line numbers preference (persisted)
 export const fileViewerLineNumbersAtom = atomWithStorage<boolean>(
   "agents:fileViewerLineNumbers",
-  true,
+  false,
   undefined,
   { getOnInit: true },
 )

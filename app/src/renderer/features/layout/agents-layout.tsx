@@ -289,6 +289,7 @@ export function AgentsLayout() {
     selectedChatId,
     customHotkeysConfig,
     betaKanbanEnabled,
+    productVibeMode,
   })
 
   const handleCloseSidebar = useCallback(() => {
