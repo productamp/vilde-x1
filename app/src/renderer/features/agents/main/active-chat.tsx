@@ -4974,6 +4974,9 @@ export function ChatView({
   const [isTerminalSidebarOpen, setIsTerminalSidebarOpen] = useAtom(terminalSidebarAtom)
   const terminalDisplayMode = useAtomValue(terminalDisplayModeAtom)
 
+  // Determine if we're in ProductVibe mode (must be declared before any effect that uses it)
+  const productVibeMode = useAtomValue(productVibeModeAtom)
+
   // Keyboard shortcut: Cmd+J to toggle terminal (disabled in ProductVibe mode)
   useEffect(() => {
     if (productVibeMode) return
@@ -5206,9 +5209,6 @@ export function ChatView({
 
     prevDiffStateRef.current = { isOpen: isDiffSidebarOpen, mode: diffDisplayMode, detailsOpen: isDetailsSidebarOpen }
   }, [isDiffSidebarOpen, diffDisplayMode, isDetailsSidebarOpen, setDiffDisplayMode, setIsDetailsSidebarOpen, setIsDiffSidebarOpen])
-
-  // Determine if we're in ProductVibe mode (declared early for traffic light effect below)
-  const productVibeMode = useAtomValue(productVibeModeAtom)
 
   // Hide/show traffic lights based on full-page diff or full-page file viewer
   // When exiting full-page mode, restore based on sidebar state (not unconditionally true)
