@@ -225,10 +225,12 @@ Everything below is gated on `productVibeMode === true`.
 
 | Element | Strategy | File | Detail |
 |---------|----------|------|--------|
-| Default layout | Rework | `active-chat.tsx`, layout atoms | Two-panel: chat (left, ~35%), preview (right, ~65%). No third column, no bottom panel. |
+| Workspaces panel (column 1) | Keep | `agents-sidebar.tsx` | Keep for now. Project selector + new project flow lives here. |
+| Chats panel (column 2) | Rework | `agents-content.tsx`, new component | Flag out the panel. Replace with a `CommandDialog` (shadcn) triggered by the existing clock icon in the chat header. Reuse the existing panel UI (search input, "New Chat" button, chat list items) inside the dialog — no redesign, just relocation. No separate `+` icon — clock is the single entry point for both history and creation. |
+| Chat header icons | Rework | `active-chat.tsx` | Left side: clock icon only (opens chat CommandDialog). Right side: settings gear, preview toggle. All dev icons (terminal, file viewer, details sidebar) flagged out. Icons are fixed — no shifting since panel 2 doesn't exist. |
+| Default layout | Rework | `active-chat.tsx`, layout atoms | Three-panel when sidebar open: workspaces (narrow), chat, preview. Two-panel when sidebar closed: chat, preview. No bottom panel, no right sidebars beyond preview. |
 | Preview auto-open | Rework | `active-chat.tsx` ~L5788 | Currently skips auto-open in ProductVibe mode. Invert: always auto-open preview when `productVibeMode`. |
 | Chat input | Rework | chat input component | Hide file attach, model selector, advanced options. Keep text input + send button. |
-| Left sidebar (chat list) | Keep | `agents-sidebar.tsx` | Already clean. Project selector + chat list. |
 
 ### Hotkeys
 
