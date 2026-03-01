@@ -4838,6 +4838,7 @@ export function ChatView({
   selectedTeamImageUrl,
   isMobileFullscreen = false,
   onBackToChats,
+  onBackToProjects,
   onOpenPreview,
   onOpenDiff,
   onOpenTerminal,
@@ -4850,6 +4851,7 @@ export function ChatView({
   selectedTeamImageUrl?: string
   isMobileFullscreen?: boolean
   onBackToChats?: () => void
+  onBackToProjects?: () => void
   onOpenPreview?: () => void
   onOpenDiff?: () => void
   onOpenTerminal?: () => void
@@ -7588,6 +7590,7 @@ Make sure to preserve all functionality from both branches when resolving confli
                         onCreateNew={handleCreateNewSubChat}
                         isMobile={false}
                         onBackToChats={onBackToChats}
+                        onBackToProjects={onBackToProjects}
                         onOpenPreview={onOpenPreview}
                         canOpenPreview={canOpenPreview}
                         onOpenDiff={canOpenDiff ? () => setIsDiffSidebarOpen(true) : undefined}

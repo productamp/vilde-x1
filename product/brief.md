@@ -96,6 +96,27 @@ Current caveat: this is the static-site baseline only. Advanced preview for Vite
 - Project save/load (SQLite + Drizzle ORM)
 - Onboarding (multi-step, auto-skip if CLI detected)
 
+## Phase 7 — Project space
+
+The sidebar panel listing workspaces is a developer pattern. Non-technical users think in "projects", not "workspaces in a sidebar". Phase 7 replaces the sidebar with a full-screen projects view.
+
+**What changes:**
+- New `projectsScreenModeAtom` feature flag (on by default in ProductVibe mode, off in 1Code mode)
+- When the flag is on, the left sidebar panel is hidden entirely
+- A new **Projects screen** renders as the home view — centered list of projects with search and "New Project"
+- Clicking a project navigates to the chat+preview view (no sidebar)
+- A "← Projects" button in the chat header navigates back
+- `Cmd+B` remapped from sidebar toggle to projects screen toggle
+- User-facing "Workspace" terminology renamed to "Project"
+
+**What stays the same:**
+- 1Code mode keeps the sidebar panel (zero changes)
+- Database schema unchanged (chats table, projects table)
+- All existing tRPC routes reused
+- Sub-chat selector dialog (Phase 6a) still handles chat history within a project
+
+**Build plan:** `product/blueprint/features/phase-7-project-space.md`
+
 ## Reference repos
 
 - `product/references/dyad/` — Desktop Lovable clone. Study for: feature set, UX flow, multi-provider AI pattern, preview pane approach. Code quality is bad, don't copy implementation details.

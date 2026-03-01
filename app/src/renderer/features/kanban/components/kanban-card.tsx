@@ -99,7 +99,7 @@ export const KanbanCard = memo(function KanbanCard({
         {/* First row: name + status indicator (справа!) */}
         <div className="flex items-center gap-1">
           <span className="truncate block text-sm leading-tight flex-1">
-            {card.name || "New Workspace"}
+            {card.name || "New Project"}
           </span>
 
           {/* Status indicator container - справа от названия */}

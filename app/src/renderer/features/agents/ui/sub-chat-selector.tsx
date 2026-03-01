@@ -14,7 +14,7 @@ import {
 } from "../../details-sidebar/atoms"
 import { chatSourceModeAtom } from "../../../lib/atoms"
 import { trpc } from "../../../lib/trpc"
-import { Plus, AlignJustify, Play, TerminalSquare, X } from "lucide-react"
+import { Plus, AlignJustify, ChevronLeft, Play, TerminalSquare, X } from "lucide-react"
 import {
   IconSpinner,
   PlanIcon,
@@ -52,7 +52,7 @@ import { toast } from "sonner"
 import { SearchCombobox } from "../../../components/ui/search-combobox"
 import { SubChatContextMenu } from "./sub-chat-context-menu"
 import { formatTimeAgo } from "../utils/format-time-ago"
-import { productVibeModeAtom } from "../../../lib/product-vibe"
+import { productVibeModeAtom, projectsScreenModeAtom } from "../../../lib/product-vibe"
 import { ChatSelectorDialog } from "./chat-selector-dialog"
 
 interface DiffStats {
@@ -171,6 +171,7 @@ interface SubChatSelectorProps {
   onCreateNew: () => void
   isMobile?: boolean
   onBackToChats?: () => void
+  onBackToProjects?: () => void
   onOpenPreview?: () => void
   canOpenPreview?: boolean
   onOpenDiff?: () => void
@@ -187,6 +188,7 @@ export function SubChatSelector({
   onCreateNew,
   isMobile = false,
   onBackToChats,
+  onBackToProjects,
   onOpenPreview,
   canOpenPreview = false,
   onOpenDiff,
@@ -232,6 +234,7 @@ export function SubChatSelector({
   )
   const pendingQuestionsMap = useAtomValue(pendingUserQuestionsAtom)
   const productVibeMode = useAtomValue(productVibeModeAtom)
+  const projectsScreenMode = useAtomValue(projectsScreenModeAtom)
   const [isChatSelectorOpen, setIsChatSelectorOpen] = useState(false)
 
   // Overview sidebar state - to check if widgets are visible
@@ -642,8 +645,25 @@ export function SubChatSelector({
         WebkitAppRegion: productVibeMode ? "no-drag" : "drag",
       }}
     >
-      {/* Burger button - hidden when sub-chats sidebar is open (it moves into sidebar) */}
-      {onBackToChats && subChatsSidebarMode === "tabs" && (
+      {/* Back to projects button - in projects-screen mode */}
+      {projectsScreenMode && onBackToProjects && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBackToProjects}
+          className="h-6 w-6 p-0 hover:bg-foreground/10 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] flex-shrink-0 rounded-md"
+          aria-label="Back to projects"
+          style={{
+            // @ts-expect-error - WebKit-specific property
+            WebkitAppRegion: "no-drag",
+          }}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      )}
+
+      {/* Burger button - hidden when sub-chats sidebar is open or in projects-screen mode */}
+      {!projectsScreenMode && onBackToChats && subChatsSidebarMode === "tabs" && (
         <Button
           variant="ghost"
           size="icon"

@@ -23,7 +23,7 @@ import { selectedAgentChatIdAtom, selectedProjectAtom, selectedDraftIdAtom, show
 import { trpc } from "../../lib/trpc"
 import { useAgentsHotkeys } from "../agents/lib/agents-hotkeys-manager"
 import { toggleSearchAtom } from "../agents/search"
-import { productVibeModeAtom } from "../../lib/product-vibe"
+import { productVibeModeAtom, projectsScreenModeAtom } from "../../lib/product-vibe"
 import { ClaudeLoginModal } from "../../components/dialogs/claude-login-modal"
 import { CodexLoginModal } from "../../components/dialogs/codex-login-modal"
 import { TooltipProvider } from "../../components/ui/tooltip"
@@ -96,6 +96,7 @@ export function AgentsLayout() {
   const [sidebarOpen, setSidebarOpen] = useAtom(agentsSidebarOpenAtom)
   const [sidebarWidth, setSidebarWidth] = useAtom(agentsSidebarWidthAtom)
   const productVibeMode = useAtomValue(productVibeModeAtom)
+  const projectsScreenMode = useAtomValue(projectsScreenModeAtom)
   const setSettingsActiveTab = useSetAtom(agentsSettingsDialogActiveTabAtom)
   const setSettingsDialogOpen = useSetAtom(agentsSettingsDialogOpenAtom)
   const desktopView = useAtomValue(desktopViewAtom)
@@ -290,6 +291,7 @@ export function AgentsLayout() {
     customHotkeysConfig,
     betaKanbanEnabled,
     productVibeMode,
+    projectsScreenMode,
   })
 
   const handleCloseSidebar = useCallback(() => {
@@ -314,32 +316,34 @@ export function AgentsLayout() {
         {/* ProductVibe global header - drag region with traffic lights + product name */}
         {productVibeMode && <ProductVibeHeader />}
         <div className="flex flex-1 overflow-hidden">
-          {/* Left Sidebar - switches between chat list and settings nav */}
-          <ResizableSidebar
-          isOpen={!isMobile && sidebarOpen}
-          onClose={handleCloseSidebar}
-          widthAtom={agentsSidebarWidthAtom}
-          minWidth={SIDEBAR_MIN_WIDTH}
-          maxWidth={SIDEBAR_MAX_WIDTH}
-          side="left"
-          closeHotkey={SIDEBAR_CLOSE_HOTKEY}
-          animationDuration={SIDEBAR_ANIMATION_DURATION}
-          initialWidth={0}
-          exitWidth={0}
-          showResizeTooltip={!isSettingsView}
-          className="overflow-hidden bg-background border-r"
-          style={{ borderRightWidth: "0.5px" }}
-        >
-          {isSettingsView ? (
-            <SettingsSidebar />
-          ) : (
-            <AgentsSidebar
-              desktopUser={desktopUser}
-              onSignOut={handleSignOut}
-              onToggleSidebar={handleCloseSidebar}
-            />
+          {/* Left Sidebar - hidden in projects-screen mode (except settings view) */}
+          {(!projectsScreenMode || isSettingsView) && (
+            <ResizableSidebar
+              isOpen={!isMobile && sidebarOpen}
+              onClose={handleCloseSidebar}
+              widthAtom={agentsSidebarWidthAtom}
+              minWidth={SIDEBAR_MIN_WIDTH}
+              maxWidth={SIDEBAR_MAX_WIDTH}
+              side="left"
+              closeHotkey={SIDEBAR_CLOSE_HOTKEY}
+              animationDuration={SIDEBAR_ANIMATION_DURATION}
+              initialWidth={0}
+              exitWidth={0}
+              showResizeTooltip={!isSettingsView}
+              className="overflow-hidden bg-background border-r"
+              style={{ borderRightWidth: "0.5px" }}
+            >
+              {isSettingsView ? (
+                <SettingsSidebar />
+              ) : (
+                <AgentsSidebar
+                  desktopUser={desktopUser}
+                  onSignOut={handleSignOut}
+                  onToggleSidebar={handleCloseSidebar}
+                />
+              )}
+            </ResizableSidebar>
           )}
-        </ResizableSidebar>
 
           {/* Main Content */}
           <div className="flex-1 overflow-hidden flex flex-col min-w-0">

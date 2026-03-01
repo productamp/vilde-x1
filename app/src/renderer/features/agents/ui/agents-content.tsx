@@ -69,9 +69,10 @@ import { AgentsQuickSwitchDialog } from "../components/agents-quick-switch-dialo
 import { SubChatsQuickSwitchDialog } from "../components/subchats-quick-switch-dialog"
 import { isDesktopApp } from "../../../lib/utils/platform"
 import { remoteTrpc } from "../../../lib/remote-trpc"
-import { productVibeModeAtom } from "../../../lib/product-vibe"
+import { productVibeModeAtom, projectsScreenModeAtom } from "../../../lib/product-vibe"
 import { useFileChangeListener } from "../../../lib/hooks/use-file-change-listener"
 import { SettingsContent } from "../../settings/settings-content"
+import { ProjectsScreen } from "./projects-screen"
 // Desktop mock
 const useIsAdmin = () => false
 
@@ -87,6 +88,8 @@ export function AgentsContent() {
   const betaKanbanEnabled = useAtomValue(betaKanbanEnabledAtom)
   const [betaAutomationsEnabled, setBetaAutomationsEnabled] = useAtom(betaAutomationsEnabledAtom)
   const productVibeMode = useAtomValue(productVibeModeAtom)
+  const projectsScreenMode = useAtomValue(projectsScreenModeAtom)
+  const setDesktopView = useSetAtom(desktopViewAtom)
   const [selectedTeamId] = useAtom(selectedTeamIdAtom)
   const setBillingMethod = useSetAtom(billingMethodAtom)
   const setAnthropicOnboardingCompleted = useSetAtom(
@@ -242,6 +245,13 @@ export function AgentsContent() {
   }, [selectedChatId, setPreviousChatId])
 
   // Note: Archive mutations moved to AgentsSidebar to share undo stack with Cmd+Z
+
+  // Auto-route to projects screen when no chat is selected in projectsScreenMode
+  useEffect(() => {
+    if (projectsScreenMode && !selectedChatId && !desktopView) {
+      setDesktopView("projects")
+    }
+  }, [projectsScreenMode, selectedChatId, desktopView, setDesktopView])
 
   // Track hydration
   useEffect(() => {
@@ -1052,6 +1062,8 @@ export function AgentsContent() {
         >
           {desktopView === "settings" ? (
             <SettingsContent />
+          ) : desktopView === "projects" ? (
+            <ProjectsScreen />
           ) : betaAutomationsEnabled && desktopView === "automations" ? (
             <AutomationsView />
           ) : betaAutomationsEnabled && desktopView === "automations-detail" ? (
@@ -1067,6 +1079,10 @@ export function AgentsContent() {
                 onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
                 selectedTeamName={selectedTeam?.name}
                 selectedTeamImageUrl={selectedTeam?.image_url}
+                onBackToProjects={projectsScreenMode ? () => {
+                  setDesktopView("projects")
+                  setSelectedChatId(null)
+                } : undefined}
               />
             </div>
           ) : selectedDraftId || showNewChatForm ? (

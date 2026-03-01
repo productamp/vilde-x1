@@ -596,7 +596,7 @@ const AgentChatItem = React.memo(function AgentChatItem({
                 >
                   <TypewriterText
                     text={chatName || ""}
-                    placeholder="New workspace"
+                    placeholder="New project"
                     id={chatId}
                     isJustCreated={isJustCreated}
                     showPlaceholder={true}
@@ -660,7 +660,7 @@ const AgentChatItem = React.memo(function AgentChatItem({
                       }}
                       tabIndex={-1}
                       className="absolute inset-0 flex items-center justify-center text-muted-foreground hover:text-foreground active:text-foreground transition-[opacity,transform,color] duration-150 ease-out opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto active:scale-[0.97]"
-                      aria-label="Archive workspace"
+                      aria-label="Archive project"
                     >
                       <ArchiveIcon className="h-3.5 w-3.5" />
                     </button>
@@ -703,8 +703,8 @@ const AgentChatItem = React.memo(function AgentChatItem({
               <>
                 <ContextMenuItem onClick={areAllSelectedPinned ? onBulkUnpin : onBulkPin}>
                   {areAllSelectedPinned
-                    ? `Unpin ${selectedChatIdsSize} ${pluralize(selectedChatIdsSize, "workspace")}`
-                    : `Pin ${selectedChatIdsSize} ${pluralize(selectedChatIdsSize, "workspace")}`}
+                    ? `Unpin ${selectedChatIdsSize} ${pluralize(selectedChatIdsSize, "project")}`
+                    : `Pin ${selectedChatIdsSize} ${pluralize(selectedChatIdsSize, "project")}`}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
               </>
@@ -712,7 +712,7 @@ const AgentChatItem = React.memo(function AgentChatItem({
             <ContextMenuItem onClick={onBulkArchive} disabled={archiveBatchPending}>
               {archiveBatchPending
                 ? "Archiving..."
-                : `Archive ${selectedChatIdsSize} ${pluralize(selectedChatIdsSize, "workspace")}`}
+                : `Archive ${selectedChatIdsSize} ${pluralize(selectedChatIdsSize, "project")}`}
             </ContextMenuItem>
           </>
         ) : (
@@ -726,10 +726,10 @@ const AgentChatItem = React.memo(function AgentChatItem({
               </>
             )}
             <ContextMenuItem onClick={() => onTogglePin(chatId)}>
-              {isPinned ? "Unpin workspace" : "Pin workspace"}
+              {isPinned ? "Unpin project" : "Pin project"}
             </ContextMenuItem>
             <ContextMenuItem onClick={() => onRenameClick({ id: chatId, name: chatName, isRemote })}>
-              Rename workspace
+              Rename project
             </ContextMenuItem>
             {chatBranch && (
               <ContextMenuItem onClick={() => onCopyBranch(chatBranch)}>
@@ -737,7 +737,7 @@ const AgentChatItem = React.memo(function AgentChatItem({
               </ContextMenuItem>
             )}
             <ContextMenuSub>
-              <ContextMenuSubTrigger>Export workspace</ContextMenuSubTrigger>
+              <ContextMenuSubTrigger>Export project</ContextMenuSubTrigger>
               <ContextMenuSubContent sideOffset={6} alignOffset={-4}>
                 <ContextMenuItem onClick={() => exportChat({ chatId: isRemote ? chatId.replace(/^remote_/, '') : chatId, format: "markdown", isRemote })}>
                   Download as Markdown
@@ -764,7 +764,7 @@ const AgentChatItem = React.memo(function AgentChatItem({
               <ContextMenuItem onClick={async () => {
                 const result = await window.desktopApi?.newWindow({ chatId })
                 if (result?.blocked) {
-                  toast.info("This workspace is already open in another window", {
+                  toast.info("This project is already open in another window", {
                     description: "Switching to the existing window.",
                     duration: 3000,
                   })
@@ -775,7 +775,7 @@ const AgentChatItem = React.memo(function AgentChatItem({
             )}
             <ContextMenuSeparator />
             <ContextMenuItem onClick={() => onArchive(chatId)} className="justify-between">
-              Archive workspace
+              Archive project
               {archiveWorkspaceHotkey && <Kbd>{archiveWorkspaceHotkey}</Kbd>}
             </ContextMenuItem>
             <ContextMenuItem
@@ -2072,7 +2072,7 @@ export function AgentsSidebar({
               },
               onError: (error) => {
                 console.error('[handleUndo] Failed to restore remote workspace:', error)
-                toast.error("Failed to restore workspace")
+                toast.error("Failed to restore project")
               },
             })
           } else {
@@ -2236,7 +2236,7 @@ export function AgentsSidebar({
       setRenameDialogOpen(false)
     } catch (error) {
       console.error('[handleRenameSave] Rename failed:', error)
-      toast.error(isRemote ? "Failed to rename remote workspace" : "Failed to rename workspace")
+      toast.error(isRemote ? "Failed to rename remote project" : "Failed to rename project")
     } finally {
       setRenameLoading(false)
       setRenamingChat(null)
@@ -2644,7 +2644,7 @@ export function AgentsSidebar({
     if (window.desktopApi?.claimChat) {
       const result = await window.desktopApi.claimChat(originalId)
       if (!result.ok) {
-        toast.info("This workspace is already open in another window", {
+        toast.info("This project is already open in another window", {
           description: "Switching to the existing window.",
           duration: 3000,
         })
@@ -3146,7 +3146,7 @@ export function AgentsSidebar({
           <div className="relative">
             <Input
               ref={searchInputRef}
-              placeholder="Search workspaces..."
+              placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -3211,11 +3211,11 @@ export function AgentsSidebar({
                   isMobileFullscreen ? "h-10" : "h-7",
                 )}
               >
-                <span className="text-sm font-medium">New Workspace</span>
+                <span className="text-sm font-medium">New Project</span>
               </ButtonCustom>
             </TooltipTrigger>
             <TooltipContent side="right" className="flex flex-col items-start gap-1">
-              <span>Start a new workspace</span>
+              <span>Start a new project</span>
               {newWorkspaceHotkey && (
                 <span className="flex items-center gap-1.5">
                   <Kbd>{newWorkspaceHotkey}</Kbd>

@@ -31,7 +31,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 5 | New project flow | Create project → scaffold → install → preview | Done |
 | 6 | UI polish and simplification | Hide dev UI | Done |
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done |
-| 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Not started |
+| 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | In progress |
 | 8 | Onboarding | Simplified setup for non-technical users | Not started |
 | 9 | Publishing | One-click deploy to live URL | Not started |
 | 10 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
@@ -148,13 +148,15 @@ Simplify file browsing by consolidating the file viewer into one panel.
 
 ### Phase 7 — Workspace-to-projects
 
-Adopt Lovable-style terminology and project management flow.
+Adopt Lovable-style terminology and project management flow. Feature-flagged via `projectsScreenModeAtom` (on by default when `productVibeMode` is on).
 
-- [ ] **Terminology migration** — replace user-facing "Workspace" copy with "Projects" across sidebar, headers, dialogs, and empty states
-- [ ] **Projects-first navigation** — make Projects the primary mental model (project switcher, recent projects, clear "New Project" entry)
-- [ ] **Project management UX** — simplify create, switch, rename, archive, and delete flows for non-technical users
+- [x] **Feature flag** — `projectsScreenModeAtom` in `product-vibe.ts`, defaults to true when productVibeMode is on
+- [x] **Projects screen** — full-page centered projects list (`projects-screen.tsx`) with search, "New Project", project list sorted by recency, settings gear
+- [x] **Sidebar gated** — `AgentsSidebar` hidden in projects-screen mode (except settings view). 1Code mode unaffected.
+- [x] **Navigation** — auto-route to projects screen when no chat selected. "← Projects" back button in chat header. `Cmd+\` navigates to projects screen instead of toggling sidebar.
+- [x] **Terminology migration** — user-facing "Workspace" → "Project" across sidebar, context menus, toasts, shortcuts, details panel, kanban, archive
 - [ ] **Project settings simplification** — focus on project name/path/status and hide developer-centric controls in `productVibeMode`
-- [ ] **Compatibility layer** — keep internal IDs/worktree internals stable while updating labels and UX
+- [x] **Compatibility layer** — internal IDs/table names unchanged, only user-facing labels updated
 
 ### Phase 8 — Onboarding
 

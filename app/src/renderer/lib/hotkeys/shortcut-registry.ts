@@ -50,20 +50,20 @@ export const ALL_SHORTCUT_ACTIONS: ShortcutAction[] = [
   },
   {
     id: "new-workspace",
-    label: "New workspace",
+    label: "New project",
     category: "workspaces",
     defaultKeys: ["cmd", "N"],
     altKeys: ["C"],
   },
   {
     id: "search-workspaces",
-    label: "Search workspaces",
+    label: "Search projects",
     category: "workspaces",
     defaultKeys: ["cmd", "K"],
   },
   {
     id: "archive-workspace",
-    label: "Archive current workspace",
+    label: "Archive current project",
     category: "workspaces",
     defaultKeys: ["cmd", "E"],
   },

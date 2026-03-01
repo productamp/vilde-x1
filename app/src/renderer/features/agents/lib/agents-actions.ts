@@ -72,8 +72,8 @@ const openShortcutsAction: AgentActionDefinition = {
 
 const createNewAgentAction: AgentActionDefinition = {
   id: "create-new-agent",
-  label: "New workspace",
-  description: "Create a new workspace",
+  label: "New project",
+  description: "Create a new project",
   category: "general",
   hotkey: "cmd+n",
   handler: async (context) => {
