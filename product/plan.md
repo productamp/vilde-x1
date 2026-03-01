@@ -122,10 +122,9 @@ End-to-end flow for starting a new project. User clicks "New Project" → app sc
 
 Strip the developer feel. Make it consumer-grade.
 
+- [ ] **Clean default layout** — chat left, preview right, nothing else
 - [ ] **Hide dev UI** — git, terminal, MCP, PRs, worktrees, diff previews behind the flag
 - [ ] **Simplified message views** — hide tool calls and diffs, show only the conversation
-- [ ] **Clean default layout** — chat left, preview right, nothing else
-- [ ] **Blog content support** — generate and serve multi-page blog sites (posts, index, navigation)
 
 ### Phase 7 — Onboarding
 
@@ -158,3 +157,89 @@ Add Gemini as an AI engine option. Claude Code and Codex are already supported.
 
 - [ ] **Gemini CLI integration** — wrap Gemini CLI the same way we wrap Claude Code and Codex
 - [ ] **Engine selector** — choose your AI engine in settings
+- [ ] **Blog content support** — generate and serve multi-page blog sites (posts, index, navigation)
+
+---
+
+## Appendix A — Phase 6 change list
+
+### Principle
+
+Two strategies. Choose per element:
+
+- **Flag** — hide via `productVibeMode` check. The feature stays, the render is gated. Quick, safe, reversible. Use for anything that's fine as-is but not for end users.
+- **Rework** — change the component behaviour or layout. Needed when hiding alone leaves a broken or confusing experience. More work, do only where necessary.
+
+Everything below is gated on `productVibeMode === true`.
+
+### Panels and sidebars
+
+| Element | Strategy | File | Detail |
+|---------|----------|------|--------|
+| Terminal sidebar (right) | Flag | `active-chat.tsx` | Don't render `<TerminalSidebar>`. Keep internal terminal for silent ops. |
+| Terminal bottom panel | Flag | `active-chat.tsx` | Don't render `<TerminalBottomPanelContent>` or `<ResizableBottomPanel>`. |
+| Details sidebar (widgets) | Flag | `details-sidebar.tsx` | Hide entire sidebar. No user-facing need for info/todo/plan/diff/mcp tabs. |
+| Changes / diff panel | Flag | `active-chat.tsx` | Don't render `<ChangesPanel>`, `<DiffFullPageView>`, `<DiffSidebarHeader>`, `<DiffCenterPeekDialog>`. |
+| File viewer sidebar | Flag | `active-chat.tsx` | Don't render file tree or file search dialog. Disable `Cmd+Shift+K`. |
+| Sub-chats sidebar | Flag | `active-chat.tsx` | Hide. Non-technical users don't need parallel sub-chat threads. |
+
+### Header and toolbar
+
+| Element | Strategy | File | Detail |
+|---------|----------|------|--------|
+| Git branch selector | Flag | `active-chat.tsx` ~L1786 | Hide branch dropdown, fetch/review/PR actions in chat header. |
+| Workspace subtitle (repo • branch) | Flag | `active-chat.tsx` ~L4650 | Hide or replace with project name only. |
+| Worktree path indicator | Flag | `active-chat.tsx` ~L4763 | Already partially gated. Verify hidden. |
+| Terminal toggle button | Flag | `active-chat.tsx` | Hide `Cmd+J` terminal toggle from toolbar. |
+| File viewer toggle button | Flag | `active-chat.tsx` | Hide file explorer button from toolbar. |
+| Details sidebar toggle button | Flag | `active-chat.tsx` | Hide widget sidebar button from toolbar. |
+
+### Settings dialog
+
+| Tab | Strategy | File | Detail |
+|-----|----------|------|--------|
+| MCP | Flag | `settings-content.tsx` | Hide tab entirely. |
+| Debug | Flag | `settings-content.tsx` | Hide tab entirely (keep ProductVibe toggle accessible via other means or dev shortcut). |
+| Plugins | Flag | `settings-content.tsx` | Hide tab entirely. |
+| Skills | Flag | `settings-content.tsx` | Hide tab entirely. |
+| Custom Agents | Flag | `settings-content.tsx` | Hide tab entirely. |
+| Projects (worktree section) | Flag | `agents-project-worktree-tab.tsx` L448 | Already gated. Verify. |
+| Models | Rework | `agents-models-tab.tsx` | Show only model picker. Hide migration UI, advanced config. |
+| Beta | Rework | `agents-beta-tab.tsx` | Show version info only. Hide automations, subscription checks. |
+| Appearance | Keep | — | User-facing. No change. |
+| Preferences | Keep | — | User-facing. No change. |
+| Keyboard | Keep | — | User-facing. No change. |
+| Profile | Rework | `agents-profile-tab.tsx` | Hide team features. Show name/avatar only. |
+
+### Chat messages
+
+| Element | Strategy | File | Detail |
+|---------|----------|------|--------|
+| Tool call blocks | Rework | `assistant-message-item.tsx`, `agent-tool-call.tsx` | Collapse all tool calls to a single subtle "Working..." indicator. No file names, no diffs, no shell output. |
+| MCP tool calls | Flag | `agent-mcp-tool-call.tsx` | Hide entirely (subset of above). |
+| File mentions | Flag | message rendering | Hide inline file path references. |
+| AI text responses | Keep | `chat-markdown-renderer.tsx` | Show as-is. This is the conversation. |
+| User messages | Keep | — | Show as-is. |
+
+### Layout
+
+| Element | Strategy | File | Detail |
+|---------|----------|------|--------|
+| Default layout | Rework | `active-chat.tsx`, layout atoms | Two-panel: chat (left, ~35%), preview (right, ~65%). No third column, no bottom panel. |
+| Preview auto-open | Rework | `active-chat.tsx` ~L5788 | Currently skips auto-open in ProductVibe mode. Invert: always auto-open preview when `productVibeMode`. |
+| Chat input | Rework | chat input component | Hide file attach, model selector, advanced options. Keep text input + send button. |
+| Left sidebar (chat list) | Keep | `agents-sidebar.tsx` | Already clean. Project selector + chat list. |
+
+### Hotkeys
+
+| Key | Strategy | Detail |
+|-----|----------|--------|
+| `Cmd+J` | Flag | Disable terminal toggle. |
+| `Cmd+Shift+K` | Flag | Disable file search. |
+| `Cmd+B` | Keep | Toggle left sidebar (useful). |
+
+### Not in scope (Phase 6)
+
+- Blog content support — moved to verification. Template from Phase 3 already supports it. Just confirm AI instructions guide correct generation.
+- Onboarding — Phase 7.
+- New settings UI design — not needed yet, flagging tabs is enough.
