@@ -24,8 +24,8 @@ See `product/plan.md` for full details.
 | 2 | First working loop | Static server + preview URL mapping | Done | |
 | 3 | Scaffold starter | Default project template (shadcn) | Done | |
 | 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done | |
-| 5 | New project flow | Create project, scaffold, install, preview | Not started | Next up |
-| 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started | |
+| 5 | New project flow | Create project, scaffold, install, preview | Done | |
+| 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started | Next up |
 | 7 | Onboarding | Simplified setup for non-technical users | Not started | |
 | 8 | Publishing | One-click deploy to live URL | Not started | |
 | 9 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |

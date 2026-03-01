@@ -12,8 +12,12 @@ interface ViteServerInfo {
 
 const servers = new Map<string, ViteServerInfo>()
 const pendingServers = new Map<string, Promise<PreviewServerResult>>()
+const intentionalKills = new Set<string>()
+const restartCounts = new Map<string, number>()
 
 const VITE_STARTUP_TIMEOUT_MS = 30_000
+const MAX_AUTO_RESTARTS = 5
+const AUTO_RESTART_DELAY_MS = 1_000
 const VITE_URL_REGEX = /Local:\s+http:\/\/(?:localhost|127\.0\.0\.1):(\d+)/
 
 /**
@@ -131,6 +135,7 @@ async function createViteDevServer(rootPath: string): Promise<PreviewServerResul
             rootPath: resolvedRoot,
           }
           servers.set(resolvedRoot, info)
+          restartCounts.delete(resolvedRoot)
 
           console.log(`[ViteDevServer] Serving ${resolvedRoot} at ${baseUrl}`)
           resolve({ baseUrl, port, rootPath: resolvedRoot })
@@ -163,10 +168,29 @@ async function createViteDevServer(rootPath: string): Promise<PreviewServerResul
             `[ViteDevServer] Process exited unexpectedly (code=${code}, signal=${signal})`,
           ),
         )
-      } else {
-        console.warn(
-          `[ViteDevServer] Process exited for ${resolvedRoot} (code=${code}, signal=${signal})`,
+      } else if (intentionalKills.has(resolvedRoot)) {
+        intentionalKills.delete(resolvedRoot)
+        console.log(
+          `[ViteDevServer] Process killed intentionally for ${resolvedRoot}`,
         )
+      } else {
+        // Unexpected crash — auto-restart
+        const count = (restartCounts.get(resolvedRoot) ?? 0) + 1
+        restartCounts.set(resolvedRoot, count)
+        if (count <= MAX_AUTO_RESTARTS) {
+          console.warn(
+            `[ViteDevServer] Process crashed for ${resolvedRoot} (code=${code}, signal=${signal}). Auto-restarting (${count}/${MAX_AUTO_RESTARTS})...`,
+          )
+          setTimeout(() => {
+            ensureViteDevServer(resolvedRoot).catch((err) => {
+              console.error(`[ViteDevServer] Auto-restart failed:`, err)
+            })
+          }, AUTO_RESTART_DELAY_MS)
+        } else {
+          console.error(
+            `[ViteDevServer] Process crashed for ${resolvedRoot} — max restarts (${MAX_AUTO_RESTARTS}) reached. Use refresh to restart manually.`,
+          )
+        }
       }
     })
   })
@@ -205,11 +229,32 @@ export async function ensureViteDevServer(
   return creation
 }
 
+/**
+ * Check if a Vite dev server is tracked and its process is still alive.
+ */
+export function isViteServerAlive(rootPath: string): boolean {
+  const resolvedRoot = path.resolve(rootPath)
+  const info = servers.get(resolvedRoot)
+  if (!info) return false
+  // Check if process is still alive by sending signal 0
+  try {
+    if (info.process.pid) {
+      process.kill(info.process.pid, 0)
+      return true
+    }
+  } catch {
+    // Process is dead but still in our map — clean up
+    servers.delete(resolvedRoot)
+  }
+  return false
+}
+
 export async function killViteDevServer(rootPath: string): Promise<void> {
   const resolvedRoot = path.resolve(rootPath)
   const info = servers.get(resolvedRoot)
   if (!info) return
 
+  intentionalKills.add(resolvedRoot)
   killProcessTree(info.process)
   servers.delete(resolvedRoot)
   console.log(`[ViteDevServer] Killed server for ${resolvedRoot}`)

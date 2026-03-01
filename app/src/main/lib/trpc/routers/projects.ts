@@ -7,13 +7,49 @@ import { basename, join } from "path"
 import { exec } from "node:child_process"
 import { promisify } from "node:util"
 import { existsSync } from "node:fs"
-import { mkdir, copyFile, unlink } from "node:fs/promises"
+import { mkdir, copyFile, unlink, cp } from "node:fs/promises"
 import { extname } from "node:path"
 import { getGitRemoteInfo } from "../../git"
 import { trackProjectOpened } from "../../analytics"
 import { getLaunchDirectory } from "../../cli"
 
 const execAsync = promisify(exec)
+
+/**
+ * Sanitize a project name for filesystem use.
+ * Lowercase, hyphens for spaces, strip special chars, max 50 chars.
+ */
+function sanitizeName(name: string): string {
+  const sanitized = name
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9\-.]/g, "")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50)
+  return sanitized || "project"
+}
+
+/**
+ * Resolve the path to the bundled default template.
+ * Dev: {appPath}/resources/templates/default
+ * Production: {resourcesPath}/templates/default
+ */
+function getTemplatePath(): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, "templates", "default")
+  }
+  return join(app.getAppPath(), "resources", "templates", "default")
+}
+
+/** Filter for fs.cp: skip node_modules, lockfiles, .git */
+function templateCopyFilter(source: string): boolean {
+  const name = basename(source)
+  if (name === "node_modules" || name === "package-lock.json" || name === "bun.lock" || name === "bun.lockb" || name === ".git") {
+    return false
+  }
+  return true
+}
 
 export const projectsRouter = router({
   /**
@@ -40,6 +76,47 @@ export const projectsRouter = router({
     .query(({ input }) => {
       const db = getDatabase()
       return db.select().from(projects).where(eq(projects.id, input.id)).get()
+    }),
+
+  /**
+   * Create a new project from the bundled template.
+   * Copies source files (no node_modules) to ~/.21st/projects/{sanitized-name}.
+   */
+  createFromTemplate: publicProcedure
+    .input(z.object({ name: z.string().min(1).max(100) }))
+    .mutation(async ({ input }) => {
+      const sanitized = sanitizeName(input.name)
+      const homePath = app.getPath("home")
+      const projectsDir = join(homePath, ".21st", "projects")
+      const targetPath = join(projectsDir, sanitized)
+
+      // Check for duplicate
+      if (existsSync(targetPath)) {
+        throw new Error(`A project named "${sanitized}" already exists`)
+      }
+
+      // Resolve template
+      const templatePath = getTemplatePath()
+      if (!existsSync(templatePath)) {
+        throw new Error("Template not found. The app may need to be reinstalled.")
+      }
+
+      // Create projects directory and copy template
+      await mkdir(projectsDir, { recursive: true })
+      await cp(templatePath, targetPath, { recursive: true, filter: templateCopyFilter })
+
+      // Insert DB record
+      const db = getDatabase()
+      const project = db
+        .insert(projects)
+        .values({
+          name: input.name,
+          path: targetPath,
+        })
+        .returning()
+        .get()
+
+      return project
     }),
 
   /**

@@ -28,7 +28,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 2 | First working loop | Static server + preview URL mapping | Done |
 | 3 | Scaffold starter | Default project template (shadcn) | Done |
 | 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done |
-| 5 | New project flow | Create project → scaffold → install → preview | Not started |
+| 5 | New project flow | Create project → scaffold → install → preview | Done |
 | 6 | UI polish and simplification | Hide dev UI, simplify messages | Not started |
 | 7 | Onboarding | Simplified setup for non-technical users | Not started |
 | 8 | Publishing | One-click deploy to live URL | Not started |
@@ -108,11 +108,15 @@ Auto-detect Vite projects and run a dev server for live preview with HMR. Assume
 
 End-to-end flow for starting a new project. User clicks "New Project" → app scaffolds template → installs deps → starts dev server → preview shows the site.
 
-- [ ] **New project UI** — simplified "create project" experience in the app
-- [ ] **Copy template on project create** — app copies bundled `resources/templates/default/` to project directory
-- [ ] **Auto `npm install`** — run install after template copy, show progress
-- [ ] **Auto-start Vite** — start dev server after install, connect preview
-- [ ] **First chat prompt** — user sees their starter site in preview and can immediately start chatting to customise it
+- [x] **New project UI** — "Create new project" button + name input on SelectRepoPage and ProjectSelector dropdown (gated behind `productVibeMode`)
+- [x] **Copy template on project create** — `createFromTemplate` tRPC mutation copies `resources/templates/default/` to `~/.21st/projects/{name}/`, filtering out `node_modules`/lockfiles
+- [x] **Auto `npm install`** — `ensureDepsInstalled()` runs `npm install` when `node_modules` is missing before starting Vite
+- [x] **Auto-start Vite** — Vite dev server starts automatically via `ensureForChat` query, preview connects
+- [x] **First chat prompt** — user sees starter site in preview and can immediately start chatting to customise it
+- [x] **Template CLAUDE.md + AGENTS.md** — guides AI to work within existing React/shadcn setup, never create standalone HTML, never start/stop the dev server
+- [x] **Dev server resilience** — auto-restart on unexpected crash (max 5 retries), refresh button re-ensures server is alive without killing it
+- [x] **CLI resolution** — both Claude and Codex prefer system-installed CLI (`which claude`/`which codex`) over bundled binary, with bundled as fallback
+- [x] **Template in extraResources** — bundled for production builds via electron-builder
 
 ### Phase 6 — UI polish and simplification
 

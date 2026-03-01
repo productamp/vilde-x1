@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { useAtom } from "jotai"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import {
   Popover,
   PopoverContent,
@@ -16,22 +16,27 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "../../../components/ui/dialog"
 import { Input } from "../../../components/ui/input"
 import { Button } from "../../../components/ui/button"
-import { IconChevronDown, CheckIcon, FolderPlusIcon, GitHubIcon } from "../../../components/ui/icons"
+import { IconChevronDown, CheckIcon, FolderPlusIcon, GitHubIcon, PlusIcon } from "../../../components/ui/icons"
 import { ProjectIcon } from "../../../components/ui/project-icon"
 import { trpc } from "../../../lib/trpc"
-import { selectedProjectAtom } from "../atoms"
+import { selectedProjectAtom, selectedAgentChatIdAtom, lastSelectedWorkModeAtom } from "../atoms"
+import { productVibeModeAtom } from "../../../lib/product-vibe"
 
 export function ProjectSelector() {
   const [selectedProject, setSelectedProject] = useAtom(selectedProjectAtom)
+  const [, setSelectedChatId] = useAtom(selectedAgentChatIdAtom)
+  const setWorkMode = useSetAtom(lastSelectedWorkModeAtom)
+  const productVibeMode = useAtomValue(productVibeModeAtom)
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [githubDialogOpen, setGithubDialogOpen] = useState(false)
   const [githubUrl, setGithubUrl] = useState("")
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [projectName, setProjectName] = useState("")
+  const [createError, setCreateError] = useState<string | null>(null)
 
   // Fetch projects from DB
   const { data: projects, isLoading: isLoadingProjects } = trpc.projects.list.useQuery()
@@ -126,6 +131,43 @@ export function ProjectSelector() {
   const handleCloneFromGitHub = async () => {
     if (!githubUrl.trim()) return
     await cloneFromGitHub.mutateAsync({ repoUrl: githubUrl.trim() })
+  }
+
+  // Create from template mutations
+  const createFromTemplate = trpc.projects.createFromTemplate.useMutation()
+  const createForNewProject = trpc.chats.createForNewProject.useMutation()
+  const isCreating = createFromTemplate.isPending || createForNewProject.isPending
+
+  const handleCreateProject = async () => {
+    if (!projectName.trim()) return
+    setCreateError(null)
+    try {
+      const project = await createFromTemplate.mutateAsync({ name: projectName.trim() })
+      if (!project) return
+
+      utils.projects.list.setData(undefined, (oldData) => {
+        if (!oldData) return [project]
+        return [project, ...oldData]
+      })
+
+      const chatResult = await createForNewProject.mutateAsync({ projectId: project.id })
+
+      setWorkMode("local")
+      setSelectedProject({
+        id: project.id,
+        name: project.name,
+        path: project.path,
+        gitRemoteUrl: project.gitRemoteUrl,
+        gitProvider: project.gitProvider as "github" | "gitlab" | "bitbucket" | null,
+        gitOwner: project.gitOwner,
+        gitRepo: project.gitRepo,
+      })
+      setSelectedChatId(chatResult.id)
+      setCreateDialogOpen(false)
+      setProjectName("")
+    } catch (err: any) {
+      setCreateError(err.message || "Failed to create project")
+    }
   }
 
   const handleSelectProject = (projectId: string) => {
@@ -242,6 +284,18 @@ export function ProjectSelector() {
             )}
           </CommandList>
           <div className="border-t border-border/50 py-1">
+            {productVibeMode && (
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  setCreateDialogOpen(true)
+                }}
+                className="flex items-center gap-1.5 min-h-[32px] py-[5px] px-1.5 mx-1 w-[calc(100%-8px)] rounded-md text-sm cursor-default select-none outline-none dark:hover:bg-neutral-800 hover:text-foreground transition-colors"
+              >
+                <PlusIcon className="h-4 w-4 text-muted-foreground" />
+                <span>Create new project</span>
+              </button>
+            )}
             <button
               onClick={handleOpenFolder}
               disabled={openFolder.isPending}
@@ -301,6 +355,55 @@ export function ProjectSelector() {
               className="rounded-md"
             >
               {cloneFromGitHub.isPending ? "Cloning..." : "Clone"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={createDialogOpen} onOpenChange={(open) => {
+      if (!open && isCreating) return
+      setCreateDialogOpen(open)
+      if (!open) { setProjectName(""); setCreateError(null) }
+    }}>
+      <DialogContent className="w-[400px] p-0 gap-0 overflow-hidden">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleCreateProject()
+          }}
+        >
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-4">
+              Create new project
+            </h2>
+            <Input
+              placeholder="My Website"
+              value={projectName}
+              onChange={(e) => { setProjectName(e.target.value); setCreateError(null) }}
+              className="w-full h-11 text-sm"
+              autoFocus
+            />
+            {createError && (
+              <p className="text-xs text-destructive mt-2">{createError}</p>
+            )}
+          </div>
+          <div className="bg-muted p-4 flex justify-between border-t border-border">
+            <Button
+              type="button"
+              onClick={() => setCreateDialogOpen(false)}
+              variant="ghost"
+              className="rounded-md"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!projectName.trim() || isCreating}
+              variant="default"
+              className="rounded-md"
+            >
+              {isCreating ? "Creating..." : "Create"}
             </Button>
           </div>
         </form>

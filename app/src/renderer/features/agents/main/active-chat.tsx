@@ -5681,6 +5681,22 @@ export function ChatView({
     },
   )
 
+  // Ensure server is alive when refresh button is pressed
+  const ensureServerAlive = trpc.preview.ensureServerAlive.useMutation({
+    onSuccess: () => {
+      trpcUtils.preview.ensureForChat.invalidate({ chatId })
+    },
+  })
+  useEffect(() => {
+    const handleRestart = (e: CustomEvent) => {
+      if (e.detail?.chatId === chatId && chatId && worktreePath) {
+        ensureServerAlive.mutate({ chatId })
+      }
+    }
+    window.addEventListener("agent-preview-restart-server", handleRestart as EventListener)
+    return () => window.removeEventListener("agent-preview-restart-server", handleRestart as EventListener)
+  }, [chatId, worktreePath])
+
   // Plugin MCP approval - disabled for now since official marketplace plugins
   // are trusted by default. Will re-enable when third-party plugin support is added.
 

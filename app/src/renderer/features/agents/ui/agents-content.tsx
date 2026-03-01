@@ -848,6 +848,26 @@ export function AgentsContent() {
       retry: 1,
     },
   )
+
+  // Ensure server is alive when refresh button is pressed
+  const utils = trpc.useUtils()
+  const ensureServerAlive = trpc.preview.ensureServerAlive.useMutation({
+    onSuccess: () => {
+      if (selectedChatId) {
+        utils.preview.ensureForChat.invalidate({ chatId: selectedChatId })
+      }
+    },
+  })
+  useEffect(() => {
+    const handleRestart = (e: CustomEvent) => {
+      if (e.detail?.chatId === selectedChatId && selectedChatId && worktreePath) {
+        ensureServerAlive.mutate({ chatId: selectedChatId })
+      }
+    }
+    window.addEventListener("agent-preview-restart-server", handleRestart as EventListener)
+    return () => window.removeEventListener("agent-preview-restart-server", handleRestart as EventListener)
+  }, [selectedChatId, worktreePath])
+
   const previewBaseUrl =
     localPreview?.baseUrl ||
     (hasRemotePreview

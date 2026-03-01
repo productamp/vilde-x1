@@ -469,6 +469,51 @@ export const chatsRouter = router({
     }),
 
   /**
+   * Create a minimal chat for a new template project (local mode, no worktree).
+   */
+  createForNewProject: publicProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = getDatabase()
+
+      const project = db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, input.projectId))
+        .get()
+      if (!project) throw new Error("Project not found")
+
+      // Create chat — local mode, worktreePath = project.path
+      const chat = db
+        .insert(chats)
+        .values({
+          projectId: input.projectId,
+          worktreePath: project.path,
+        })
+        .returning()
+        .get()
+
+      // Create empty sub-chat in agent mode
+      const subChat = db
+        .insert(subChats)
+        .values({
+          chatId: chat.id,
+          mode: "agent",
+          messages: "[]",
+        })
+        .returning()
+        .get()
+
+      trackWorkspaceCreated({
+        id: chat.id,
+        projectId: input.projectId,
+        useWorktree: false,
+      })
+
+      return { ...chat, subChats: [subChat] }
+    }),
+
+  /**
    * Rename a chat
    */
   rename: publicProcedure

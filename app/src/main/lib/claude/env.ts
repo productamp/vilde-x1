@@ -106,16 +106,11 @@ export function getBundledClaudeBinaryPath(): string {
 
 /**
  * Resolve the Claude executable path.
- * Prefer the bundled binary when present; otherwise fall back to the user's
- * installed claude CLI from the shell PATH.
+ * Prefer the user's installed claude CLI from the shell PATH;
+ * fall back to the bundled binary if not found.
  */
 export function resolveClaudeCodeExecutablePath(): string | undefined {
-  const bundledPath = getBundledClaudeBinaryPath()
-
-  if (fs.existsSync(bundledPath)) {
-    return bundledPath
-  }
-
+  // 1. Prefer system-installed claude CLI
   try {
     const command = isWindows() ? "where claude" : "which claude"
     const fullPath = getExtendedPath()
@@ -129,11 +124,17 @@ export function resolveClaudeCodeExecutablePath(): string | undefined {
       ?.trim()
 
     if (resolved) {
-      console.log("[claude-binary] Falling back to installed Claude CLI:", resolved)
       return resolved
     }
   } catch {
     // No installed CLI found on PATH
+  }
+
+  // 2. Fall back to bundled binary
+  const bundledPath = getBundledClaudeBinaryPath()
+  if (fs.existsSync(bundledPath)) {
+    console.log("[claude-binary] Using bundled Claude CLI:", bundledPath)
+    return bundledPath
   }
 
   return undefined

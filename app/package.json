@@ -173,6 +173,19 @@
       {
         "from": "resources/bin/VERSION",
         "to": "bin/VERSION"
+      },
+      {
+        "from": "resources/templates/default",
+        "to": "templates/default",
+        "filter": [
+          "!node_modules",
+          "!node_modules/**",
+          "!package-lock.json",
+          "!bun.lock",
+          "!bun.lockb",
+          "!.git",
+          "!.git/**"
+        ]
       }
     ],
     "asar": true,

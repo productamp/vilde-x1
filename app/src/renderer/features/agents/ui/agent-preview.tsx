@@ -127,6 +127,16 @@ export function AgentPreview({
     setCurrentPath(persistedPath)
   }, [persistedPath])
 
+  // Reload iframe when the preview base URL changes (e.g., server restarted on a different port)
+  const prevBaseUrlRef = useRef(previewBaseUrl)
+  useEffect(() => {
+    if (prevBaseUrlRef.current !== previewBaseUrl) {
+      prevBaseUrlRef.current = previewBaseUrl
+      setReloadKey((prev) => prev + 1)
+      setIsLoaded(false)
+    }
+  }, [previewBaseUrl])
+
   // Compute base host and preview URL
   const normalizedPreviewBaseUrl = useMemo(
     () => previewBaseUrl.replace(/\/+$/, ""),
@@ -206,8 +216,14 @@ export function AgentPreview({
     setIsRefreshing(true)
     setIsLoaded(false)
     setReloadKey((prev) => prev + 1)
+    // Ask parent to re-ensure the dev server is running
+    window.dispatchEvent(
+      new CustomEvent("agent-preview-restart-server", {
+        detail: { chatId },
+      }),
+    )
     setTimeout(() => setIsRefreshing(false), 400)
-  }, [isRefreshing])
+  }, [isRefreshing, chatId])
 
   const handlePresetChange = useCallback(
     (presetName: string) => {

@@ -3,7 +3,7 @@ import { atomWithStorage } from "jotai/utils"
 
 const productVibeModeStorageAtom = atomWithStorage<boolean>(
   "preferences:product-vibe-mode",
-  false,
+  true,
   undefined,
   { getOnInit: true },
 )

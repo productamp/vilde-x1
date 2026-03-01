@@ -3,7 +3,7 @@ import { observable } from "@trpc/server/observable"
 import { streamText } from "ai"
 import { eq } from "drizzle-orm"
 import { app } from "electron"
-import { spawn, type ChildProcess } from "node:child_process"
+import { execSync, spawn, type ChildProcess } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync } from "node:fs"
 import { readdir, readFile } from "node:fs/promises"
@@ -236,6 +236,26 @@ function resolveCodexAcpBinaryPath(): string {
 
 function resolveBundledCodexCliPath(): string {
   const binaryName = process.platform === "win32" ? "codex.exe" : "codex"
+
+  // 1. Prefer system-installed codex CLI
+  try {
+    const command = process.platform === "win32" ? "where codex" : "which codex"
+    const resolved = execSync(command, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    })
+      .trim()
+      .split(/\r?\n/)[0]
+      ?.trim()
+
+    if (resolved && existsSync(resolved)) {
+      return resolved
+    }
+  } catch {
+    // No system codex found
+  }
+
+  // 2. Fall back to bundled binary
   const resourcesDir = app.isPackaged
     ? join(process.resourcesPath, "bin")
     : join(
@@ -252,7 +272,7 @@ function resolveBundledCodexCliPath(): string {
 
   const hint = app.isPackaged
     ? "Binary is missing from bundled resources."
-    : "Run `bun run codex:download` to download it for local dev."
+    : "Install codex globally, or run `bun run codex:download` for the bundled binary."
 
   throw new Error(
     `[codex] Bundled Codex CLI not found at ${binaryPath}. ${hint}`,
