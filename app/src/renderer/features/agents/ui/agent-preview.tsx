@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react"
-import { useAtom } from "jotai"
+import { useAtom, useAtomValue } from "jotai"
 import { Button } from "../../../components/ui/button"
 import { RotateCw } from "lucide-react"
 import {
@@ -23,6 +23,8 @@ import { DevicePresetsBar } from "./device-presets-bar"
 import { ResizeHandle } from "./resize-handle"
 import { MobileCopyLinkButton } from "./mobile-copy-link-button"
 import { DEVICE_PRESETS, AGENTS_PREVIEW_CONSTANTS } from "../constants"
+import { selectedProjectAtom } from "../atoms"
+import { trpc } from "../../../lib/trpc"
 interface AgentPreviewProps {
   chatId: string
   previewBaseUrl: string
@@ -58,6 +60,24 @@ export function AgentPreview({
   )
   const [scale, setScale] = useAtom(previewScaleAtomFamily(chatId))
   const [device, setDevice] = useAtom(mobileDeviceAtomFamily(chatId))
+
+  // Auto-capture thumbnail when preview loads
+  const selectedProject = useAtomValue(selectedProjectAtom)
+  const captureThumbnail = trpc.projects.captureThumbnail.useMutation()
+  const hasCapturedRef = useRef(false)
+  useEffect(() => {
+    if (isLoaded && selectedProject?.id && previewBaseUrl && !hasCapturedRef.current) {
+      hasCapturedRef.current = true
+      console.log("[Thumbnail] Capturing for", selectedProject.id, previewBaseUrl)
+      captureThumbnail.mutate(
+        { projectId: selectedProject.id, previewUrl: previewBaseUrl },
+        {
+          onSuccess: (data) => console.log("[Thumbnail] Saved:", data.thumbPath),
+          onError: (err) => console.error("[Thumbnail] Failed:", err.message),
+        },
+      )
+    }
+  }, [isLoaded, selectedProject?.id, previewBaseUrl])
 
   // Local state for resizing
   const [isResizing, setIsResizing] = useState(false)

@@ -23,7 +23,7 @@ import { selectedAgentChatIdAtom, selectedProjectAtom, selectedDraftIdAtom, show
 import { trpc } from "../../lib/trpc"
 import { useAgentsHotkeys } from "../agents/lib/agents-hotkeys-manager"
 import { toggleSearchAtom } from "../agents/search"
-import { productVibeModeAtom, projectsScreenModeAtom } from "../../lib/product-vibe"
+import { productVibeModeAtom } from "../../lib/product-vibe"
 import { ClaudeLoginModal } from "../../components/dialogs/claude-login-modal"
 import { CodexLoginModal } from "../../components/dialogs/codex-login-modal"
 import { TooltipProvider } from "../../components/ui/tooltip"
@@ -36,6 +36,7 @@ import { useUpdateChecker } from "../../lib/hooks/use-update-checker"
 import { useAgentSubChatStore } from "../agents/stores/sub-chat-store"
 import { QueueProcessor } from "../agents/components/queue-processor"
 import { SettingsSidebar } from "../settings/settings-sidebar"
+import { MainSidebar } from "../sidebar/main-sidebar"
 import { ProductVibeHeader } from "./product-vibe-header"
 
 // ============================================================================
@@ -96,7 +97,6 @@ export function AgentsLayout() {
   const [sidebarOpen, setSidebarOpen] = useAtom(agentsSidebarOpenAtom)
   const [sidebarWidth, setSidebarWidth] = useAtom(agentsSidebarWidthAtom)
   const productVibeMode = useAtomValue(productVibeModeAtom)
-  const projectsScreenMode = useAtomValue(projectsScreenModeAtom)
   const setSettingsActiveTab = useSetAtom(agentsSettingsDialogActiveTabAtom)
   const setSettingsDialogOpen = useSetAtom(agentsSettingsDialogOpenAtom)
   const desktopView = useAtomValue(desktopViewAtom)
@@ -202,13 +202,19 @@ export function AgentsLayout() {
       return
     }
 
+    // Keep sidebar open on the projects screen (no project selected is expected)
+    if (desktopView === "projects") {
+      setSidebarOpen(true)
+      return
+    }
+
     // After initial load, react to project changes
     if (validatedProject) {
       setSidebarOpen(true)
     } else {
       setSidebarOpen(false)
     }
-  }, [validatedProject, projects, setSidebarOpen])
+  }, [validatedProject, projects, setSidebarOpen, desktopView])
 
   // Worktree setup failures from main process
   useEffect(() => {
@@ -291,7 +297,6 @@ export function AgentsLayout() {
     customHotkeysConfig,
     betaKanbanEnabled,
     productVibeMode,
-    projectsScreenMode,
   })
 
   const handleCloseSidebar = useCallback(() => {
@@ -316,8 +321,8 @@ export function AgentsLayout() {
         {/* ProductVibe global header - drag region with traffic lights + product name */}
         {productVibeMode && <ProductVibeHeader />}
         <div className="flex flex-1 overflow-hidden">
-          {/* Left Sidebar - hidden in projects-screen mode (except settings view) */}
-          {(!projectsScreenMode || isSettingsView) && (
+          {/* Left Sidebar — hidden in ProductVibe mode when inside a project */}
+          {!(productVibeMode && selectedChatId && !isSettingsView) && (
             <ResizableSidebar
               isOpen={!isMobile && sidebarOpen}
               onClose={handleCloseSidebar}
@@ -335,12 +340,14 @@ export function AgentsLayout() {
             >
               {isSettingsView ? (
                 <SettingsSidebar />
-              ) : (
+              ) : selectedChatId ? (
                 <AgentsSidebar
                   desktopUser={desktopUser}
                   onSignOut={handleSignOut}
                   onToggleSidebar={handleCloseSidebar}
                 />
+              ) : (
+                <MainSidebar />
               )}
             </ResizableSidebar>
           )}

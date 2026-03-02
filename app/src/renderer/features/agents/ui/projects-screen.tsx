@@ -1,11 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useAtom, useSetAtom } from "jotai"
-import { Plus, Search, Settings, Globe } from "lucide-react"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { Search } from "lucide-react"
 
 import { Input } from "../../../components/ui/input"
-import { IconSpinner } from "../../../components/ui/icons"
+import { cn } from "../../../lib/utils"
 import { trpc } from "../../../lib/trpc"
 import { formatTimeAgo } from "../../../lib/utils/format-time-ago"
 import {
@@ -13,37 +13,80 @@ import {
   selectedAgentChatIdAtom,
   lastSelectedWorkModeAtom,
   desktopViewAtom,
+  projectsFilterAtom,
+  type ProjectsFilter,
 } from "../atoms"
+
+interface ProjectItem {
+  projectId: string
+  projectName: string
+  chatId: string
+  updatedAt: Date | null
+  displayUrl: string
+}
+
+const FILTER_TABS: Array<{ id: ProjectsFilter; label: string }> = [
+  { id: "recents", label: "Recents" },
+  { id: "all", label: "All" },
+  { id: "archived", label: "Archived" },
+]
 
 export function ProjectsScreen() {
   const [, setSelectedProject] = useAtom(selectedProjectAtom)
   const [, setSelectedChatId] = useAtom(selectedAgentChatIdAtom)
   const setWorkMode = useSetAtom(lastSelectedWorkModeAtom)
   const setDesktopView = useSetAtom(desktopViewAtom)
+  const [activeFilter, setActiveFilter] = useAtom(projectsFilterAtom)
 
   const [search, setSearch] = useState("")
-  const [showCreate, setShowCreate] = useState(false)
-  const [projectName, setProjectName] = useState("")
-  const [createError, setCreateError] = useState<string | null>(null)
-
-  const utils = trpc.useUtils()
+  const [searchOpen, setSearchOpen] = useState(false)
 
   // Data
   const { data: allChats } = trpc.chats.list.useQuery({})
+  const { data: archivedChats } = trpc.chats.listArchived.useQuery({})
   const { data: projects } = trpc.projects.list.useQuery()
 
-  // Mutations
-  const createFromTemplate = trpc.projects.createFromTemplate.useMutation()
-  const createForNewProject = trpc.chats.createForNewProject.useMutation()
-  const isCreating = createFromTemplate.isPending || createForNewProject.isPending
-
-  // Build project list: group chats by project, use most recent chat per project
+  // Build project list based on active filter
   const projectItems = useMemo(() => {
-    if (!projects || !allChats) return []
+    if (!projects) return []
+
+    if (activeFilter === "archived") {
+      if (!archivedChats) return []
+      const archivedByProject = new Map<string, typeof archivedChats[0]>()
+      for (const chat of archivedChats) {
+        const existing = archivedByProject.get(chat.projectId)
+        if (!existing || (chat.archivedAt && existing.archivedAt && chat.archivedAt > existing.archivedAt)) {
+          archivedByProject.set(chat.projectId, chat)
+        }
+      }
+
+      const items: ProjectItem[] = []
+
+      for (const [projectId, chat] of archivedByProject) {
+        const project = projects.find((p) => p.id === projectId)
+        if (!project) continue
+        items.push({
+          projectId,
+          projectName: project.name,
+          chatId: chat.id,
+          updatedAt: chat.archivedAt,
+          displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
+        })
+      }
+
+      items.sort((a, b) => {
+        const aTime = a.updatedAt?.getTime() ?? 0
+        const bTime = b.updatedAt?.getTime() ?? 0
+        return bTime - aTime
+      })
+      return items
+    }
+
+    // "recents" and "all" — use active (non-archived) chats
+    if (!allChats) return []
 
     const projectsMap = new Map(projects.map((p) => [p.id, p]))
 
-    // Group chats by projectId, pick most recent chat per project
     const chatsByProject = new Map<string, typeof allChats[0]>()
     for (const chat of allChats) {
       const existing = chatsByProject.get(chat.projectId)
@@ -52,13 +95,7 @@ export function ProjectsScreen() {
       }
     }
 
-    // Build items sorted by most recent activity
-    const items: Array<{
-      projectId: string
-      projectName: string
-      chatId: string
-      updatedAt: Date | null
-    }> = []
+    const items: ProjectItem[] = []
 
     for (const [projectId, chat] of chatsByProject) {
       const project = projectsMap.get(projectId)
@@ -68,10 +105,10 @@ export function ProjectsScreen() {
         projectName: project.name,
         chatId: chat.id,
         updatedAt: chat.updatedAt,
+        displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
       })
     }
 
-    // Also include projects with no chats
     for (const project of projects) {
       if (!chatsByProject.has(project.id)) {
         items.push({
@@ -79,18 +116,23 @@ export function ProjectsScreen() {
           projectName: project.name,
           chatId: "",
           updatedAt: project.updatedAt,
+          displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
         })
       }
     }
 
-    items.sort((a, b) => {
-      const aTime = a.updatedAt?.getTime() ?? 0
-      const bTime = b.updatedAt?.getTime() ?? 0
-      return bTime - aTime
-    })
+    if (activeFilter === "all") {
+      items.sort((a, b) => a.projectName.localeCompare(b.projectName))
+    } else {
+      items.sort((a, b) => {
+        const aTime = a.updatedAt?.getTime() ?? 0
+        const bTime = b.updatedAt?.getTime() ?? 0
+        return bTime - aTime
+      })
+    }
 
     return items
-  }, [projects, allChats])
+  }, [projects, allChats, archivedChats, activeFilter])
 
   // Filter by search
   const filteredItems = useMemo(() => {
@@ -121,147 +163,106 @@ export function ProjectsScreen() {
     setDesktopView(null)
   }
 
-  const handleCreateProject = async () => {
-    if (!projectName.trim()) return
-    setCreateError(null)
-    try {
-      const project = await createFromTemplate.mutateAsync({ name: projectName.trim() })
-      if (!project) return
-
-      utils.projects.list.setData(undefined, (oldData) => {
-        if (!oldData) return [project]
-        return [project, ...oldData]
-      })
-
-      const chatResult = await createForNewProject.mutateAsync({ projectId: project.id })
-
-      setWorkMode("local")
-      setSelectedProject({
-        id: project.id,
-        name: project.name,
-        path: project.path,
-        gitRemoteUrl: project.gitRemoteUrl,
-        gitProvider: project.gitProvider as "github" | "gitlab" | "bitbucket" | null,
-        gitOwner: project.gitOwner,
-        gitRepo: project.gitRepo,
-      })
-      setSelectedChatId(chatResult.id)
-      setDesktopView(null)
-    } catch (err: any) {
-      setCreateError(err.message || "Failed to create project")
-    }
-  }
-
-  const handleOpenSettings = () => {
-    setDesktopView("settings")
-  }
-
   return (
-    <div className="h-full flex flex-col items-center bg-background select-none overflow-y-auto">
-      <div className="w-full max-w-[480px] px-4 py-12">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-base font-semibold">Projects</h1>
-          <button
-            onClick={handleOpenSettings}
-            className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-foreground/10 transition-colors"
-          >
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </div>
+    <div className="h-full flex flex-col bg-white select-none overflow-hidden">
+      {/* Header */}
+      <div className="flex-shrink-0 px-8 pt-8 pb-2">
+        <div className="flex items-end justify-between">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Projects</h1>
 
-        {/* Search */}
-        <div className="relative mb-3">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search projects..."
-            className="pl-8 h-8 text-sm"
-          />
-        </div>
-
-        {/* New Project */}
-        {showCreate ? (
-          <div className="mb-3 space-y-2">
-            <div className="relative">
-              <Input
-                value={projectName}
-                onChange={(e) => {
-                  setProjectName(e.target.value)
-                  setCreateError(null)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && projectName.trim()) handleCreateProject()
-                  if (e.key === "Escape") {
-                    setShowCreate(false)
-                    setProjectName("")
-                    setCreateError(null)
-                  }
-                }}
-                placeholder="Project name"
-                className="h-8 text-sm pr-8"
-                autoFocus
-                disabled={isCreating}
-              />
-              {isCreating && (
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                  <IconSpinner className="h-3.5 w-3.5" />
-                </div>
-              )}
+          <div className="flex items-center gap-2">
+            {/* Filter tabs */}
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+              {FILTER_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveFilter(tab.id)}
+                  className={cn(
+                    "px-3 h-6 rounded-md text-xs font-medium transition-all duration-150",
+                    activeFilter === tab.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-            {createError && (
-              <p className="text-xs text-destructive">{createError}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Press Enter to create, Escape to cancel
-            </p>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="w-full h-8 mb-3 px-3 flex items-center gap-2 rounded-md text-sm text-muted-foreground hover:bg-foreground/5 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New Project
-          </button>
-        )}
 
-        {/* Divider */}
-        <div className="h-px bg-border mb-1" />
-
-        {/* Project list */}
-        {filteredItems.length === 0 && !showCreate ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              {search ? "No projects match your search" : "No projects yet"}
-            </p>
-            {!search && (
+            {/* Search */}
+            {searchOpen ? (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setSearch("")
+                      setSearchOpen(false)
+                    }
+                  }}
+                  placeholder="Search..."
+                  className="pl-8 h-7 w-44 text-xs"
+                  autoFocus
+                />
+              </div>
+            ) : (
               <button
-                onClick={() => setShowCreate(true)}
-                className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium transition-[background-color,transform] duration-150 hover:bg-primary/90 active:scale-[0.97]"
+                onClick={() => setSearchOpen(true)}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
-                Create your first project
+                <Search className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Card grid */}
+      <div className="flex-1 overflow-y-auto px-8 py-6">
+        {filteredItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <p className="text-sm text-muted-foreground">
+              {search
+                ? "No projects match your search"
+                : activeFilter === "archived"
+                  ? "No archived projects"
+                  : "No projects yet"}
+            </p>
+          </div>
         ) : (
-          <div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-10">
             {filteredItems.map((item) => (
               <button
                 key={item.projectId}
                 onClick={() => handleSelectProject(item)}
-                className="w-full h-9 px-3 flex items-center gap-2.5 rounded-md hover:bg-foreground/5 transition-colors group"
+                className="flex flex-col gap-2 text-left group"
               >
-                <Globe className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm truncate flex-1 text-left">
-                  {item.projectName}
-                </span>
-                {item.updatedAt && (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {formatTimeAgo(item.updatedAt)}
+                {/* Thumbnail with browser frame */}
+                <div className="aspect-[3/2] bg-neutral-300 border border-border rounded-lg pt-5 px-6 overflow-hidden transition-[border-color,box-shadow] duration-150 group-hover:border-border/60 group-hover:shadow-sm">
+                  <div className="w-full h-full flex flex-col rounded-t overflow-hidden shadow-sm">
+                    {/* Browser chrome */}
+                    <div className="flex items-center px-2 h-4 bg-neutral-100 border-b border-neutral-200 flex-shrink-0">
+                      <span className="text-[6px] leading-none text-neutral-900 truncate">{item.displayUrl}</span>
+                    </div>
+                    {/* Page content */}
+                    <div className="flex-1 bg-neutral-100 overflow-hidden">
+                      <ProjectThumbnail projectId={item.projectId} />
+                    </div>
+                  </div>
+                </div>
+                {/* Info */}
+                <div className="flex flex-col gap-0.5 px-0.5">
+                  <span className="text-sm font-medium text-foreground truncate">
+                    {item.projectName}
                   </span>
-                )}
+                  {item.updatedAt && (
+                    <span className="text-xs text-muted-foreground">
+                      {activeFilter === "archived" ? "Archived" : "Edited"} {formatTimeAgo(item.updatedAt)}
+                    </span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
@@ -269,4 +270,11 @@ export function ProjectsScreen() {
       </div>
     </div>
   )
+}
+
+// Thumbnail image component — loads PNG via tRPC as base64 data URL
+function ProjectThumbnail({ projectId }: { projectId: string }) {
+  const { data: src } = trpc.projects.getThumbnail.useQuery({ projectId })
+  if (!src) return null
+  return <img src={src} alt="" className="w-full h-full object-cover object-top" />
 }

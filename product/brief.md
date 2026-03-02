@@ -98,22 +98,28 @@ Current caveat: this is the static-site baseline only. Advanced preview for Vite
 
 ## Phase 7 — Project space
 
-The sidebar panel listing workspaces is a developer pattern. Non-technical users think in "projects", not "workspaces in a sidebar". Phase 7 replaces the sidebar with a full-screen projects view.
+The projects dashboard is the app's home page, inspired by Paper's card grid design. It has its own sidebar (`MainSidebar`) separate from the workspace sidebar. The workspace sidebar (`AgentsSidebar`) is feature-flagged out entirely in ProductVibe mode.
 
-**What changes:**
-- New `projectsScreenModeAtom` feature flag (on by default in ProductVibe mode, off in 1Code mode)
-- When the flag is on, the left sidebar panel is hidden entirely
-- A new **Projects screen** renders as the home view — centered list of projects with search and "New Project"
-- Clicking a project navigates to the chat+preview view (no sidebar)
-- A "← Projects" button in the chat header navigates back
-- `Cmd+B` remapped from sidebar toggle to projects screen toggle
-- User-facing "Workspace" terminology renamed to "Project"
+**Architecture — three sidebars, context-switched:**
+- **Home** (no chat selected) → `MainSidebar` with nav links + "New Project" button
+- **Workspace** (chat selected, 1Code mode) → `AgentsSidebar` (unchanged)
+- **Workspace** (chat selected, ProductVibe mode) → *no sidebar* — full width for chat+preview
+- **Settings** → `SettingsSidebar` (unchanged)
+
+**Projects screen (Paper-inspired):**
+- Card grid with neutral thumbnails, title/subtitle below cards
+- Filter tabs in header toolbar (Recents / All / Archived)
+- Collapsible search icon
+- No create UI in the grid — "New Project" lives only in the sidebar
+
+**MainSidebar:**
+- Logo header, "New Project" button (creates project + navigates to chat), nav links (Recents/All/Archived), footer icons matching workspace sidebar (Settings, Help, Archive, Feedback)
 
 **What stays the same:**
-- 1Code mode keeps the sidebar panel (zero changes)
-- Database schema unchanged (chats table, projects table)
+- 1Code mode keeps the workspace sidebar panel (zero changes)
+- Database schema unchanged
 - All existing tRPC routes reused
-- Sub-chat selector dialog (Phase 6a) still handles chat history within a project
+- `Cmd+\` toggles sidebar normally
 
 **Build plan:** `product/blueprint/features/phase-7-project-space.md`
 

@@ -148,10 +148,6 @@ function AppContent() {
   // 5. No valid project selected -> SelectRepoPage
   // 6. Otherwise -> AgentsLayout
   if (productVibeMode) {
-    if (!validatedProject && !isLoadingProjects) {
-      return <SelectRepoPage />
-    }
-
     return <AgentsLayout />
   }
 

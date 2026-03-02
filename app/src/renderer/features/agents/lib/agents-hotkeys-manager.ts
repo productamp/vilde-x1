@@ -118,7 +118,6 @@ export interface AgentsHotkeysManagerConfig {
   // Feature flags
   betaKanbanEnabled?: boolean
   productVibeMode?: boolean
-  projectsScreenMode?: boolean
 }
 
 export interface UseAgentsHotkeysOptions {
@@ -229,12 +228,6 @@ export function useAgentsHotkeys(
       if (toggleSidebarHotkey && matchesHotkey(e, toggleSidebarHotkey)) {
         e.preventDefault()
         e.stopPropagation()
-        // In projects-screen mode, navigate to projects screen instead of toggling sidebar
-        if (config.projectsScreenMode && config.setDesktopView && config.setSelectedChatId) {
-          config.setDesktopView("projects")
-          config.setSelectedChatId(null)
-          return
-        }
         handleHotkeyAction("toggle-sidebar")
         return
       }

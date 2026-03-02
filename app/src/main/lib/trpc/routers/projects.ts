@@ -7,7 +7,7 @@ import { basename, join } from "path"
 import { exec } from "node:child_process"
 import { promisify } from "node:util"
 import { existsSync } from "node:fs"
-import { mkdir, copyFile, unlink, cp } from "node:fs/promises"
+import { mkdir, copyFile, unlink, cp, writeFile, readFile } from "node:fs/promises"
 import { extname } from "node:path"
 import { getGitRemoteInfo } from "../../git"
 import { trackProjectOpened } from "../../analytics"
@@ -622,5 +622,66 @@ export const projectsRouter = router({
         .where(eq(projects.id, input.id))
         .returning()
         .get()
+    }),
+
+  /**
+   * Read a project's thumbnail as a base64 data URL.
+   * Looks for public/thumbnail.png inside the project folder.
+   */
+  getThumbnail: publicProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ input }) => {
+      const db = getDatabase()
+      const project = db.select().from(projects).where(eq(projects.id, input.projectId)).get()
+      if (!project) return null
+      const thumbPath = join(project.path, ".productvibe", "thumbnail.png")
+      if (!existsSync(thumbPath)) return null
+      const buf = await readFile(thumbPath)
+      return `data:image/png;base64,${buf.toString("base64")}`
+    }),
+
+  /**
+   * Capture a thumbnail screenshot of the project's live preview.
+   * Saves to public/thumbnail.png inside the project folder.
+   */
+  captureThumbnail: publicProcedure
+    .input(z.object({ projectId: z.string(), previewUrl: z.string().url() }))
+    .mutation(async ({ input }) => {
+      const db = getDatabase()
+      const project = db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, input.projectId))
+        .get()
+      if (!project) throw new Error("Project not found")
+
+      const metaDir = join(project.path, ".productvibe")
+      await mkdir(metaDir, { recursive: true })
+      const thumbPath = join(metaDir, "thumbnail.png")
+
+      // Create offscreen window
+      const win = new BrowserWindow({
+        show: false,
+        width: 1280,
+        height: 800,
+        webPreferences: {
+          offscreen: true,
+          javascript: true,
+        },
+      })
+
+      try {
+        await win.loadURL(input.previewUrl)
+        // Give the page a moment to render (CSS, images, fonts)
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+
+        const image = await win.webContents.capturePage()
+        const resized = image.resize({ width: 640 })
+        await writeFile(thumbPath, resized.toPNG())
+
+        return { thumbPath }
+      } finally {
+        win.destroy()
+      }
     }),
 })

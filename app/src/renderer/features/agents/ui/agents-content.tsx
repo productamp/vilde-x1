@@ -23,6 +23,7 @@ import {
   agentsSubChatsSidebarModeAtom,
   agentsSubChatsSidebarWidthAtom,
   desktopViewAtom,
+  selectedProjectAtom,
 } from "../atoms"
 import {
   selectedTeamIdAtom,
@@ -89,6 +90,7 @@ export function AgentsContent() {
   const [betaAutomationsEnabled, setBetaAutomationsEnabled] = useAtom(betaAutomationsEnabledAtom)
   const productVibeMode = useAtomValue(productVibeModeAtom)
   const projectsScreenMode = useAtomValue(projectsScreenModeAtom)
+  const selectedProject = useAtomValue(selectedProjectAtom)
   const setDesktopView = useSetAtom(desktopViewAtom)
   const [selectedTeamId] = useAtom(selectedTeamIdAtom)
   const setBillingMethod = useSetAtom(billingMethodAtom)
@@ -246,10 +248,10 @@ export function AgentsContent() {
 
   // Note: Archive mutations moved to AgentsSidebar to share undo stack with Cmd+Z
 
-  // Auto-route to projects screen when no chat is selected in projectsScreenMode
+  // Auto-route to Home (new-chat) when no chat is selected in projectsScreenMode
   useEffect(() => {
     if (projectsScreenMode && !selectedChatId && !desktopView) {
-      setDesktopView("projects")
+      setDesktopView("new-chat")
     }
   }, [projectsScreenMode, selectedChatId, desktopView, setDesktopView])
 
@@ -1070,6 +1072,14 @@ export function AgentsContent() {
             <AutomationsDetailView />
           ) : betaAutomationsEnabled && desktopView === "inbox" ? (
             <InboxView />
+          ) : desktopView === "new-chat" ? (
+            selectedProject ? (
+              <div className="h-full flex flex-col relative overflow-hidden">
+                <NewChatForm key={`new-chat-${newChatFormKeyRef.current}`} />
+              </div>
+            ) : (
+              <ProjectsScreen />
+            )
           ) : selectedChatId ? (
             <div className="h-full flex flex-col relative overflow-hidden">
               <ChatView
@@ -1089,6 +1099,8 @@ export function AgentsContent() {
             <div className="h-full flex flex-col relative overflow-hidden">
               <NewChatForm key={`new-chat-${newChatFormKeyRef.current}`} />
             </div>
+          ) : projectsScreenMode ? (
+            <ProjectsScreen />
           ) : betaKanbanEnabled ? (
             <KanbanView />
           ) : (

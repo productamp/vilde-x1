@@ -1,350 +1,144 @@
 # Phase 7 — Project space
 
-Replace the sidebar workspace panel with a full-screen projects view. Feature-flag the panel approach so 1Code mode keeps working.
+The projects dashboard is the app's home page. It has its own sidebar (`MainSidebar`) with nav links and footer icons. The workspace sidebar (`AgentsSidebar`) is feature-flagged out in ProductVibe mode. New projects go straight to the chat view.
 
-## Current state
+## Architecture
 
-### Layout (ProductVibe mode, sidebar open)
+### Three sidebars, context-switched in `agents-layout.tsx`
+
+| Context | Sidebar | Condition |
+|---------|---------|-----------|
+| Home (projects view) | `MainSidebar` | `!selectedChatId` (default) |
+| Inside a workspace | `AgentsSidebar` | `selectedChatId && !productVibeMode` |
+| Settings | `SettingsSidebar` | `desktopView === "settings"` |
+| ProductVibe + workspace | *Hidden* | `productVibeMode && selectedChatId` |
+
+The entire `ResizableSidebar` is unmounted when in ProductVibe mode with a chat selected — no sidebar at all inside a workspace.
+
+### Navigation model (atom-driven, no URL router)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ ProductVibe                                   (header)  │
-├──────────┬──────────────────┬───────────────────────────┤
-│ Sidebar  │ Chat             │ Preview                   │
-│ 160-300  │ (active-chat)    │ (agent-preview)           │
-│          │                  │                           │
-│ Search   │                  │                           │
-│ + New WS │                  │                           │
-│ ws list  │                  │                           │
-│          │                  │                           │
-│ footer   │                  │                           │
-└──────────┴──────────────────┴───────────────────────────┘
+desktopView === "projects"  →  ProjectsScreen (card grid)
+desktopView === "settings"  →  SettingsContent
+desktopView === null + selectedChatId  →  ChatView
+desktopView === null + !selectedChatId  →  auto-routes to "projects"
 ```
 
-- **Sidebar** — `AgentsSidebar` in `agents-layout.tsx` L318-342. Resizable (160-300px). Contains search, "New Workspace" button, workspace list (pinned + recent), footer with settings/help/archive.
-- **Chat** — `ChatView` in `agents-content.tsx` L1061-1069. Main chat area.
-- **Preview** — Inside `ChatView`. Preview iframe, files tab.
+### Feature flags
 
-### Key files
+- `productVibeModeAtom` — main ProductVibe toggle
+- `projectsScreenModeAtom` — projects-screen feature flag (auto-enabled when productVibeMode is on, can be overridden independently)
 
-| File | What |
+## Layout
+
+### Home — Projects dashboard
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ProductVibe                                       (header)  │
+├───────────┬─────────────────────────────────────────────────┤
+│ Main      │ Projects    Recents│All│Archived    🔍          │
+│ Sidebar   │─────────────────────────────────────────────────│
+│           │ ┌──────────┐ ┌──────────┐ ┌──────────┐         │
+│ + New     │ │          │ │          │ │          │         │
+│           │ │  (thumb) │ │  (thumb) │ │  (thumb) │         │
+│ Recents   │ │          │ │          │ │          │         │
+│ All       │ └──────────┘ └──────────┘ └──────────┘         │
+│ Archived  │ My Yoga       Airbnb       Portfolio            │
+│           │ Edited 2m     Edited 15m   Edited 1h            │
+│ ──────    │                                                 │
+│ ⚙ ? 📦   │                                                 │
+│ Feedback  │                                                 │
+└───────────┴─────────────────────────────────────────────────┘
+```
+
+### Workspace — Chat + Preview (ProductVibe mode)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ProductVibe                                       (header)  │
+├────────────────────────────┬────────────────────────────────┤
+│ ← Projects   🕐  +        │ Preview                        │
+│ Chat                       │                                │
+│                            │                                │
+└────────────────────────────┴────────────────────────────────┘
+```
+
+No sidebar. Full width for chat + preview.
+
+## Key files
+
+| File | Role |
 |------|------|
-| `agents-layout.tsx` | Outer shell. Renders `ResizableSidebar` > `AgentsSidebar` + `AgentsContent`. |
-| `agents-content.tsx` | Switches between chat, new-chat, settings, automations based on `desktopViewAtom`. |
-| `agents-sidebar.tsx` | ~3500 LOC. Workspace list, search, creation, archive/pin, footer nav. |
-| `atoms/index.ts` L1022 | `DesktopView = "automations" \| "automations-detail" \| "inbox" \| "settings" \| null` |
-| `product-vibe-header.tsx` | Global header bar with traffic lights + "ProductVibe" label. |
-| `select-repo-page.tsx` | Full-screen "no project selected" page (create/open/clone). |
-| `product-vibe.ts` | `productVibeModeAtom` — the main feature flag. |
+| `features/sidebar/main-sidebar.tsx` | **New.** Home sidebar — logo, "New Project" button, nav links (Recents/All/Archived), footer (Settings, Help, Archive, Feedback) |
+| `features/agents/ui/projects-screen.tsx` | **New.** Card grid — Paper-style design with filter tabs in header, neutral thumbnail cards, title/subtitle below cards |
+| `features/layout/agents-layout.tsx` | Sidebar context-switch: MainSidebar / AgentsSidebar / SettingsSidebar / hidden |
+| `features/agents/atoms/index.ts` | `DesktopView` type, `ProjectsFilter` type, `projectsFilterAtom` |
+| `lib/product-vibe.ts` | `projectsScreenModeAtom` feature flag |
+| `features/agents/ui/agents-content.tsx` | Routes `desktopView === "projects"` → `ProjectsScreen`, auto-route effect |
+| `features/agents/ui/sub-chat-selector.tsx` | "← Projects" back button when `projectsScreenMode` is on |
 
-### Navigation model
+## Design decisions
 
-Atom-driven, no URL router:
+### ProjectsScreen (Paper-inspired)
 
-- `selectedProjectAtom = null` → `SelectRepoPage` (full-screen takeover in `App.tsx`)
-- `selectedProjectAtom != null` → `AgentsLayout`
-- `desktopViewAtom = "settings"` → `SettingsContent` replaces chat area
-- `desktopViewAtom = null` + `selectedAgentChatIdAtom != null` → `ChatView`
-- `desktopViewAtom = null` + `selectedAgentChatIdAtom = null` → `NewChatForm`
+- **Header toolbar** (`h-12`): title left, pill-style filter tabs center (`bg-muted/50` track, `bg-background shadow-sm` active), collapsible search icon right
+- **Card grid**: `grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-5`
+- **Cards**: neutral `bg-muted/40 rounded-xl border border-border` thumbnail (aspect 4:3), title + timestamp *below* the card (not inside). Hover: border lightens + `shadow-sm`
+- **No create UI in the grid** — "New Project" lives only in the sidebar
+- **Filter tabs duplicate sidebar nav links** — sidebar links navigate to the projects view AND set the filter; header tabs switch filter while already on the view
 
-## Target state
+### MainSidebar
 
-### Feature flag
+- **Header**: Logo + "ProductVibe" label (no traffic lights — those are in ProductVibeHeader above)
+- **"New Project" button**: Primary-styled, creates an "Untitled" project + chat via `createFromTemplate` + `createForNewProject` and navigates straight to the chat view (the "What do you want to get done?" page)
+- **Nav links**: Recents (default, sorted by activity), All (alphabetical), Archived (archived chats grouped by project). Clicking navigates to projects view + sets filter
+- **Footer**: Settings (with hotkey tooltip), Help (`AgentsHelpPopover`), Archive (`ArchivePopover`, hidden when count=0), Feedback button. Exact same icon styling as workspace sidebar: `h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50`
 
-New atom: `projectsScreenModeAtom`
+### AgentsSidebar gating
 
-```typescript
-// In product-vibe.ts or a new file
-export const projectsScreenModeAtom = atomWithStorage<boolean>(
-  "preferences:projects-screen-mode",
-  false, // default off — toggled on by productVibeMode derived logic
-  undefined,
-  { getOnInit: true },
-)
-```
+- `AgentsSidebar` is fully feature-flagged out in ProductVibe mode: condition is `selectedChatId && !productVibeMode`
+- In 1Code mode (productVibeMode off), `AgentsSidebar` works exactly as before when a chat is selected
+- `Cmd+\` toggles the sidebar normally (the Phase 7 override that navigated to projects was reverted)
 
-Derived behaviour:
-- `productVibeMode === true` → `projectsScreenMode` defaults to `true`
-- `productVibeMode === false` → `projectsScreenMode` defaults to `false`
-- Either can be overridden independently for testing
+### Terminology
 
-All new changes in this phase gate on `projectsScreenMode`, not `productVibeMode` directly.
+User-facing "Workspace" → "Project" across sidebar, kanban, archive, hotkeys, details panel (~9 files). Internal code names (`chats`, `agentChats`, `AgentsSidebar`) unchanged.
 
-### Layout (projects screen mode ON)
-
-```
-No chat selected — Projects screen:
-┌─────────────────────────────────────────────────────────┐
-│ ProductVibe                                   (header)  │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│         ┌─────────────────────────────────┐             │
-│         │ 🔍 Search projects...           │             │
-│         ├─────────────────────────────────┤             │
-│         │ + New Project                   │             │
-│         │─────────────────────────────────│             │
-│         │ 🌐 My Yoga Studio        2m    │             │
-│         │ 🌐 Airbnb Landing       15m    │             │
-│         │ 🌐 Portfolio Site         1h   │             │
-│         └─────────────────────────────────┘             │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-Chat selected — Chat + Preview (no sidebar):
-┌─────────────────────────────────────────────────────────┐
-│ ProductVibe                                   (header)  │
-├────────────────────────┬────────────────────────────────┤
-│ Chat                   │ Preview                        │
-│ ← Projects  🕐  +     │                                │
-│                        │                                │
-└────────────────────────┴────────────────────────────────┘
-```
-
-- No sidebar panel. Full width for content.
-- Projects screen is the home view when no chat is active.
-- "← Projects" button in chat header navigates back.
-
-### Layout (projects screen mode OFF — 1Code default)
-
-No change. Sidebar panel works exactly as before.
-
-## New atom value
-
-Add `"projects"` to `DesktopView`:
+## Filter logic (`projectsFilterAtom`)
 
 ```typescript
-export type DesktopView = "automations" | "automations-detail" | "inbox" | "projects" | "settings" | null
+type ProjectsFilter = "recents" | "all" | "archived"
 ```
 
-When `desktopViewAtom === "projects"`, `AgentsContent` renders the new `ProjectsScreen` component.
+| Filter | Data source | Sort |
+|--------|------------|------|
+| `recents` | `trpc.chats.list` (non-archived) grouped by project | `updatedAt DESC` |
+| `all` | Same as recents | `projectName ASC` (alphabetical) |
+| `archived` | `trpc.chats.listArchived` grouped by project | `archivedAt DESC` |
 
-## New component: `ProjectsScreen`
+## Verification
 
-**File:** `app/src/renderer/features/agents/ui/projects-screen.tsx`
+**ProductVibe mode ON:**
+- [x] App starts → projects screen with MainSidebar
+- [x] Card grid shows projects with neutral thumbnails
+- [x] Filter tabs (Recents/All/Archived) filter the grid
+- [x] Sidebar nav links match filter tabs
+- [x] "New Project" in sidebar creates project and navigates to chat view
+- [x] Clicking a project card navigates to its most recent chat
+- [x] Chat view has no sidebar, "← Projects" button in header
+- [x] "← Projects" returns to projects screen with MainSidebar
+- [x] Settings accessible from sidebar footer
+- [x] `Cmd+\` toggles sidebar visibility
 
-A full-page centered view. Not a sidebar — it replaces the entire content area.
-
-### Data
-
-- `trpc.chats.list.useQuery({})` — all workspaces (same as sidebar)
-- `trpc.projects.list.useQuery()` — all projects (for name/path lookup)
-- Join chats to projects via `chat.projectId → project`
-
-### Display
-
-- Centered card (max-width ~480px)
-- Search input at top (filters by project name or chat name)
-- "New Project" action (reuses `trpc.projects.createFromTemplate` flow from `SelectRepoPage`)
-- Project list sorted by `updatedAt DESC`
-- Each item shows: project name, time since last activity
-- Click → sets `selectedAgentChatIdAtom` to the most recent chat for that project, clears `desktopViewAtom` to `null`
-
-### Empty state
-
-If no projects exist, show a friendly empty state with "Create your first project" button.
-
-### Settings access
-
-Gear icon in the header or footer of the projects screen. Sets `desktopViewAtom = "settings"`.
-
-## Build steps
-
-### Step 1 — Feature flag atom
-
-**File:** `app/src/renderer/lib/product-vibe.ts`
-
-Add `projectsScreenModeAtom`:
-
-```typescript
-const projectsScreenModeStorageAtom = atomWithStorage<boolean>(
-  "preferences:projects-screen-mode",
-  false,
-  undefined,
-  { getOnInit: true },
-)
-
-// Derived: follows productVibeMode by default, can be overridden
-export const projectsScreenModeAtom = atom(
-  (get) => {
-    const stored = get(projectsScreenModeStorageAtom)
-    const productVibe = get(productVibeModeAtom)
-    // If productVibe is on and user hasn't explicitly toggled, default to true
-    return stored || productVibe
-  },
-  (_get, set, value: boolean) => set(projectsScreenModeStorageAtom, value),
-)
-```
-
-Note: the exact derivation logic may need tuning. The simple approach is: `productVibeMode` implies `projectsScreenMode` unless explicitly overridden. Consider whether the stored value should be `null | boolean` to distinguish "user chose" from "default".
-
-### Step 2 — Extend `DesktopView` type
-
-**File:** `app/src/renderer/features/agents/atoms/index.ts` L1022
-
-```diff
-- export type DesktopView = "automations" | "automations-detail" | "inbox" | "settings" | null
-+ export type DesktopView = "automations" | "automations-detail" | "inbox" | "projects" | "settings" | null
-```
-
-### Step 3 — Create `ProjectsScreen` component
-
-**New file:** `app/src/renderer/features/agents/ui/projects-screen.tsx`
-
-- Centered layout with constrained width
-- Search input (local filter, no debounce needed for small lists)
-- "New Project" row/button
-- Project list items: name, relative time, click handler
-- Reuse existing tRPC queries (`chats.list`, `projects.list`)
-- On project select:
-  1. `setSelectedAgentChatId(mostRecentChatForProject)`
-  2. `setSelectedProject(project)`
-  3. `setDesktopView(null)` — returns to chat view
-- On "New Project":
-  1. Show name input (inline or small dialog)
-  2. Call `trpc.projects.createFromTemplate`
-  3. Call `trpc.chats.createForNewProject`
-  4. Set atoms, navigate to chat view
-- Settings gear icon (if no other access point is available)
-
-### Step 4 — Wire `ProjectsScreen` into `AgentsContent`
-
-**File:** `app/src/renderer/features/agents/ui/agents-content.tsx`
-
-In the desktop layout switch (L1053-1082), add the `"projects"` case:
-
-```diff
-  {desktopView === "settings" ? (
-    <SettingsContent />
-+ ) : desktopView === "projects" ? (
-+   <ProjectsScreen />
-  ) : betaAutomationsEnabled && desktopView === "automations" ? (
-```
-
-### Step 5 — Hide sidebar in projects-screen mode
-
-**File:** `app/src/renderer/features/layout/agents-layout.tsx`
-
-Gate the `ResizableSidebar` wrapping `AgentsSidebar` on `!projectsScreenMode`:
-
-```diff
-+ const projectsScreenMode = useAtomValue(projectsScreenModeAtom)
-  ...
-- <ResizableSidebar
--   isOpen={!isMobile && sidebarOpen}
--   ...
-- >
--   {isSettingsView ? <SettingsSidebar /> : <AgentsSidebar ... />}
-- </ResizableSidebar>
-+ {!projectsScreenMode ? (
-+   <ResizableSidebar
-+     isOpen={!isMobile && sidebarOpen}
-+     ...
-+   >
-+     {isSettingsView ? <SettingsSidebar /> : <AgentsSidebar ... />}
-+   </ResizableSidebar>
-+ ) : isSettingsView ? (
-+   <ResizableSidebar ...>
-+     <SettingsSidebar />
-+   </ResizableSidebar>
-+ ) : null}
-```
-
-Note: `SettingsSidebar` still needs to render when `desktopView === "settings"` even in projects-screen mode. Consider whether settings should use the sidebar or render as a full-page view in projects-screen mode. Simplest: keep `SettingsSidebar` as a full-page view when `projectsScreenMode` is on.
-
-### Step 6 — Auto-route to projects screen
-
-**File:** `app/src/renderer/features/agents/ui/agents-content.tsx`
-
-When `projectsScreenMode` is on and no chat is selected, auto-set `desktopView = "projects"`:
-
-```typescript
-useEffect(() => {
-  if (projectsScreenMode && !selectedChatId && !desktopView) {
-    setDesktopView("projects")
-  }
-}, [projectsScreenMode, selectedChatId, desktopView])
-```
-
-Also: when a chat is archived/deleted and `selectedChatId` becomes null, this effect kicks in and returns the user to the projects screen.
-
-### Step 7 — "Back to projects" in chat header
-
-**File:** `app/src/renderer/features/agents/ui/sub-chat-selector.tsx` or `active-chat.tsx`
-
-When `projectsScreenMode` is on, replace the hamburger (sidebar toggle) with a "← Projects" back button:
-
-- On click: `setDesktopView("projects")` + `setSelectedChatId(null)`
-- This is the primary navigation to get back to the projects list
-
-### Step 8 — Remap `Cmd+B`
-
-**File:** `app/src/renderer/features/agents/lib/agents-hotkeys-manager.ts`
-
-When `projectsScreenMode` is on:
-- `Cmd+B` navigates to/from projects screen instead of toggling sidebar
-- If on projects screen: no-op or focus search
-- If on chat view: `setDesktopView("projects")` + `setSelectedChatId(null)`
-
-### Step 9 — Terminology pass
-
-Rename user-facing strings from "Workspace" to "Project" across:
-
-| Location | Current | New |
-|----------|---------|-----|
-| Sidebar search placeholder | "Search workspaces..." | "Search projects..." |
-| Sidebar "New Workspace" button | "New Workspace" | "New Project" |
-| Quick-switch dialog title | (implicit) | Reference "projects" |
-| Chat selector dialog | "New Chat" | Keep (it's sub-chats, not projects) |
-| Archive toast messages | "Workspace archived" | "Project archived" |
-| Settings > Projects tab | (already "Projects") | Keep |
-
-Note: Internal code naming (`chats`, `agentChats`, `AgentsSidebar`) stays unchanged. Only user-visible strings change.
-
-### Step 10 — Verify and test
-
-**Projects screen mode ON (ProductVibe):**
-- [ ] App starts → projects screen (no sidebar)
-- [ ] Projects list shows all projects sorted by recency
-- [ ] Search filters projects
-- [ ] "New Project" creates project + first chat, navigates to chat view
-- [ ] Clicking a project navigates to its most recent chat
-- [ ] Chat view has no sidebar, "← Projects" button in header
-- [ ] "← Projects" returns to projects screen
-- [ ] `Cmd+B` returns to projects screen from chat view
-- [ ] Archiving last chat in a project returns to projects screen
-- [ ] Settings accessible from projects screen
-- [ ] Quick-switch (`Ctrl+Tab`) still works between workspaces
-
-**Projects screen mode OFF (1Code):**
-- [ ] Everything works exactly as before — sidebar panel, no projects screen
-- [ ] No regressions in sidebar, chat, preview, sub-chats
-
-## Files changed
-
-| File | Change |
-|------|--------|
-| `lib/product-vibe.ts` | Add `projectsScreenModeAtom` |
-| `features/agents/atoms/index.ts` | Add `"projects"` to `DesktopView` type |
-| `features/agents/ui/projects-screen.tsx` | **New.** Full-page projects list with search + create + select. |
-| `features/agents/ui/agents-content.tsx` | Add `"projects"` case, auto-route effect |
-| `features/layout/agents-layout.tsx` | Gate sidebar behind `!projectsScreenMode` |
-| `features/agents/ui/sub-chat-selector.tsx` | "← Projects" back button in `projectsScreenMode` |
-| `features/agents/lib/agents-hotkeys-manager.ts` | Remap `Cmd+B` in `projectsScreenMode` |
-| `features/sidebar/agents-sidebar.tsx` | Terminology: "Workspace" → "Project" in user-facing strings |
-| Various dialogs/toasts | Terminology pass |
-
-## Dependencies
-
-- shadcn `Command` — already in `components/ui/command.tsx`
-- `productVibeModeAtom` — already available
-- `trpc.chats.list`, `trpc.projects.list`, `trpc.projects.createFromTemplate`, `trpc.chats.createForNewProject` — all existing
+**ProductVibe mode OFF (1Code):**
+- [x] Sidebar panel works exactly as before
+- [x] No MainSidebar or projects screen appears
+- [x] No regressions
 
 ## Not in scope
 
-- Changing the database schema (chats table stays as-is)
-- Modifying `AgentsSidebar` internals (it keeps working for 1Code mode)
-- Project thumbnails/previews in the list (stretch goal for later)
+- Project thumbnails/previews (stretch goal — currently neutral `bg-muted/40`)
+- Database schema changes
 - Multi-window project isolation
-- `SelectRepoPage` changes (still handles the "no project at all" case)
-- Message view simplification (Phase 11)
-- Settings simplification (Phase 11)
+- Message view simplification (future phase)
