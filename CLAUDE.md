@@ -25,12 +25,15 @@ See `product/plan.md` for full details.
 | 3 | Scaffold starter | Default project template (shadcn) | Done | |
 | 4 | Vite dev server | Auto-detect Vite, dev server with HMR | Done | |
 | 5 | New project flow | Create project, scaffold, install, preview | Done | |
-| 6 | UI polish and simplification | Hide dev UI, simplify messages | In progress | |
+| 6 | UI polish and simplification | Hide dev UI, simplify messages | Done | |
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done | |
-| 7 | Onboarding | Simplified setup for non-technical users | Not started | |
-| 8 | Publishing | One-click deploy to live URL | Not started | |
-| 9 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
-| 10 | Gemini support | Add Gemini as AI engine | Not started | |
+| 7 | Workspace-to-projects | Projects screen, cards, favourites, filters | Done | |
+| 8 | Project settings | Simplify project settings for non-technical users | Not started | |
+| 9 | Onboarding | Simplified setup for non-technical users | Not started | |
+| 10 | Publishing | One-click deploy to live URL | Not started | |
+| 11 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
+| 12 | UI and settings simplification | Simplify message views, hide developer tabs | Not started | |
+| 13 | Gemini support | Add Gemini as AI engine | Not started | |
 
 ## Key files in app (1Code)
 

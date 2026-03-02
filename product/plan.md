@@ -31,12 +31,13 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 5 | New project flow | Create project → scaffold → install → preview | Done |
 | 6 | UI polish and simplification | Hide dev UI | Done |
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done |
-| 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | In progress |
-| 8 | Onboarding | Simplified setup for non-technical users | Not started |
-| 9 | Publishing | One-click deploy to live URL | Not started |
-| 10 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
-| 11 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
-| 12 | Gemini support | Add Gemini as AI engine | Not started |
+| 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
+| 8 | Project settings | Simplify project settings for non-technical users | Not started |
+| 9 | Onboarding | Simplified setup for non-technical users | Not started |
+| 10 | Publishing | One-click deploy to live URL | Not started |
+| 11 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
+| 12 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
+| 13 | Gemini support | Add Gemini as AI engine | Not started |
 
 ### Phase 0 — Setup
 
@@ -155,10 +156,23 @@ Adopt Lovable-style terminology and project management flow. Feature-flagged via
 - [x] **Sidebar gated** — `AgentsSidebar` hidden in projects-screen mode (except settings view). 1Code mode unaffected.
 - [x] **Navigation** — auto-route to projects screen when no chat selected. "← Projects" back button in chat header. `Cmd+\` navigates to projects screen instead of toggling sidebar.
 - [x] **Terminology migration** — user-facing "Workspace" → "Project" across sidebar, context menus, toasts, shortcuts, details panel, kanban, archive
-- [ ] **Project settings simplification** — focus on project name/path/status and hide developer-centric controls in `productVibeMode`
 - [x] **Compatibility layer** — internal IDs/table names unchanged, only user-facing labels updated
+- [x] **Project thumbnails** — capture preview screenshots to `.productvibe/thumbnail.png`, serve via tRPC as base64 data URLs
+- [x] **Browser frame cards** — project cards with minimal browser chrome, grey background, display URL
+- [x] **Favourite projects** — star toggle on cards, `isFavourited` DB column, Favourites section in sidebar
+- [x] **Filter tabs** — Drafts / Published / Archived (replaces Recents / All)
 
-### Phase 8 — Onboarding
+### Phase 8 — Project settings
+
+Simplify project settings for non-technical users. Hide developer-centric controls in `productVibeMode`.
+
+- [ ] **Audit existing settings** — identify all fields in the project settings panel and categorise as user-facing vs developer-only
+- [ ] **Hide developer controls** — gate worktree config, git settings, CLI paths, and advanced options behind `!productVibeMode`
+- [ ] **Simplified project info** — show project name, folder path, status, and thumbnail. Allow renaming.
+- [ ] **Delete / archive project** — clear, accessible actions with confirmation dialogs
+- [ ] **Favourite from settings** — toggle favourite status from the project settings panel
+
+### Phase 9 — Onboarding
 
 Make the first 60 seconds work for someone who's never used a terminal.
 
@@ -166,7 +180,7 @@ Make the first 60 seconds work for someone who's never used a terminal.
 - [ ] **API key setup** — guide user through getting and entering their key
 - [ ] **First project creation** — "What kind of website do you want?" → scaffold → preview
 
-### Phase 9 — Publishing
+### Phase 10 — Publishing
 
 The other half of the value prop. Users need their site on the internet.
 
@@ -174,7 +188,7 @@ The other half of the value prop. Users need their site on the internet.
 - [ ] **One-click publish** — from preview to live URL with minimal steps
 - [ ] **Update flow** — chat to change → preview → re-publish
 
-### Phase 10 — Scaffold optimisation
+### Phase 11 — Scaffold optimisation
 
 Improve the starter template based on what we've learned from real usage.
 
@@ -183,7 +197,7 @@ Improve the starter template based on what we've learned from real usage.
 - [ ] **Template variants** — multiple starter templates for different site types
 - [ ] **Reduce first-build time** — optimise dependencies, trim unused components, speed up `npm install`
 
-### Phase 11 — UI and settings simplification
+### Phase 12 — UI and settings simplification
 
 Simplify message views and hide developer-facing settings.
 
@@ -199,7 +213,7 @@ Simplify message views and hide developer-facing settings.
 - [ ] **Simplify Profile tab** — hide team features, show name/avatar only
 - [ ] **Projects tab** — verify worktree section is already gated
 
-### Phase 12 — Gemini support
+### Phase 13 — Gemini support
 
 Add Gemini as an AI engine option. Claude Code and Codex are already supported.
 
