@@ -1,8 +1,8 @@
 "use client"
 
-import { memo, useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { Home, LayoutGrid } from "lucide-react"
+import { Home, LayoutGrid, Star } from "lucide-react"
 
 import { Logo } from "../../components/ui/logo"
 import {
@@ -28,6 +28,8 @@ import {
   desktopViewAtom,
   selectedAgentChatIdAtom,
   selectedDraftIdAtom,
+  selectedProjectAtom,
+  lastSelectedWorkModeAtom,
 } from "../agents/atoms"
 import { useResolvedHotkeyDisplay } from "../../lib/hotkeys"
 import { AgentsHelpPopover } from "../agents/components/agents-help-popover"
@@ -45,9 +47,20 @@ export function MainSidebar() {
   const setSettingsDialogOpen = useSetAtom(agentsSettingsDialogOpenAtom)
   const settingsHotkey = useResolvedHotkeyDisplay("open-settings")
 
+  const setSelectedProject = useSetAtom(selectedProjectAtom)
+  const setWorkMode = useSetAtom(lastSelectedWorkModeAtom)
+
   // Archived chats count for archive button visibility
   const { data: archivedChats } = trpc.chats.listArchived.useQuery({})
   const archivedChatsCount = archivedChats?.length ?? 0
+
+  // Favourited projects
+  const { data: allProjects } = trpc.projects.list.useQuery()
+  const { data: allChats } = trpc.chats.list.useQuery({})
+  const favourites = useMemo(() => {
+    if (!allProjects) return []
+    return allProjects.filter((p) => p.isFavourited)
+  }, [allProjects])
 
   const handleOpenSettings = useCallback(() => {
     setSettingsActiveTab("preferences")
@@ -100,6 +113,43 @@ export function MainSidebar() {
           Projects
         </button>
       </div>
+
+      {/* Favourites */}
+      {favourites.length > 0 && (
+        <div className="px-2 mt-4">
+          <div className="px-3 pb-1">
+            <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">Favourites</span>
+          </div>
+          <div className="space-y-0.5">
+            {favourites.map((project) => (
+              <button
+                key={project.id}
+                onClick={() => {
+                  // Find most recent chat for this project
+                  const chat = allChats?.filter((c) => c.projectId === project.id)
+                    .sort((a, b) => ((b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0)))[0]
+                  setWorkMode("local")
+                  setSelectedProject({
+                    id: project.id,
+                    name: project.name,
+                    path: project.path,
+                    gitRemoteUrl: project.gitRemoteUrl,
+                    gitProvider: project.gitProvider as "github" | "gitlab" | "bitbucket" | null,
+                    gitOwner: project.gitOwner,
+                    gitRepo: project.gitRepo,
+                  })
+                  if (chat) setSelectedChatId(chat.id)
+                  setDesktopView(null)
+                }}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-sm h-7 rounded-md text-muted-foreground hover:bg-foreground/5 hover:text-foreground transition-colors duration-75 cursor-pointer"
+              >
+                <Star className="h-3 w-3 flex-shrink-0 fill-amber-400 text-amber-400" />
+                <span className="truncate">{project.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

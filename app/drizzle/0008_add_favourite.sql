@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `is_favourited` integer DEFAULT 0;

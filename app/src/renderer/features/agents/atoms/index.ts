@@ -1023,8 +1023,8 @@ export type DesktopView = "automations" | "automations-detail" | "inbox" | "new-
 export const desktopViewAtom = atom<DesktopView>(null)
 
 // Projects screen filter
-export type ProjectsFilter = "recents" | "all" | "archived"
-export const projectsFilterAtom = atom<ProjectsFilter>("recents")
+export type ProjectsFilter = "drafts" | "published" | "archived"
+export const projectsFilterAtom = atom<ProjectsFilter>("drafts")
 
 // Which automation is being viewed/edited (ID or "new" for creation)
 export const automationDetailIdAtom = atom<string | null>(null)

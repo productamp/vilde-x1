@@ -263,6 +263,23 @@ export const projectsRouter = router({
     }),
 
   /**
+   * Toggle favourite status for a project
+   */
+  toggleFavourite: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => {
+      const db = getDatabase()
+      const project = db.select().from(projects).where(eq(projects.id, input.id)).get()
+      if (!project) throw new Error("Project not found")
+      return db
+        .update(projects)
+        .set({ isFavourited: !project.isFavourited, updatedAt: new Date() })
+        .where(eq(projects.id, input.id))
+        .returning()
+        .get()
+    }),
+
+  /**
    * Delete a project and all its chats
    */
   delete: publicProcedure

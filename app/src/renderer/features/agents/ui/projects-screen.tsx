@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { Search } from "lucide-react"
+import { Search, Star } from "lucide-react"
 
 import { Input } from "../../../components/ui/input"
 import { cn } from "../../../lib/utils"
@@ -23,11 +23,12 @@ interface ProjectItem {
   chatId: string
   updatedAt: Date | null
   displayUrl: string
+  isFavourited: boolean
 }
 
 const FILTER_TABS: Array<{ id: ProjectsFilter; label: string }> = [
-  { id: "recents", label: "Recents" },
-  { id: "all", label: "All" },
+  { id: "drafts", label: "Drafts" },
+  { id: "published", label: "Published" },
   { id: "archived", label: "Archived" },
 ]
 
@@ -42,9 +43,13 @@ export function ProjectsScreen() {
   const [searchOpen, setSearchOpen] = useState(false)
 
   // Data
+  const utils = trpc.useUtils()
   const { data: allChats } = trpc.chats.list.useQuery({})
   const { data: archivedChats } = trpc.chats.listArchived.useQuery({})
   const { data: projects } = trpc.projects.list.useQuery()
+  const toggleFavourite = trpc.projects.toggleFavourite.useMutation({
+    onSuccess: () => utils.projects.list.invalidate(),
+  })
 
   // Build project list based on active filter
   const projectItems = useMemo(() => {
@@ -71,6 +76,7 @@ export function ProjectsScreen() {
           chatId: chat.id,
           updatedAt: chat.archivedAt,
           displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
+          isFavourited: !!project.isFavourited,
         })
       }
 
@@ -82,7 +88,11 @@ export function ProjectsScreen() {
       return items
     }
 
-    // "recents" and "all" — use active (non-archived) chats
+    // "drafts" and "published" — use active (non-archived) chats
+    // TODO: distinguish drafts vs published once publish status exists
+    // For now, "published" shows empty and "drafts" shows all active projects
+    if (activeFilter === "published") return []
+
     if (!allChats) return []
 
     const projectsMap = new Map(projects.map((p) => [p.id, p]))
@@ -106,6 +116,7 @@ export function ProjectsScreen() {
         chatId: chat.id,
         updatedAt: chat.updatedAt,
         displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
+        isFavourited: !!project.isFavourited,
       })
     }
 
@@ -117,19 +128,16 @@ export function ProjectsScreen() {
           chatId: "",
           updatedAt: project.updatedAt,
           displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
+          isFavourited: !!project.isFavourited,
         })
       }
     }
 
-    if (activeFilter === "all") {
-      items.sort((a, b) => a.projectName.localeCompare(b.projectName))
-    } else {
-      items.sort((a, b) => {
-        const aTime = a.updatedAt?.getTime() ?? 0
-        const bTime = b.updatedAt?.getTime() ?? 0
-        return bTime - aTime
-      })
-    }
+    items.sort((a, b) => {
+      const aTime = a.updatedAt?.getTime() ?? 0
+      const bTime = b.updatedAt?.getTime() ?? 0
+      return bTime - aTime
+    })
 
     return items
   }, [projects, allChats, archivedChats, activeFilter])
@@ -228,16 +236,18 @@ export function ProjectsScreen() {
                 ? "No projects match your search"
                 : activeFilter === "archived"
                   ? "No archived projects"
-                  : "No projects yet"}
+                  : activeFilter === "published"
+                    ? "No published projects"
+                    : "No projects yet"}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-10">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-10">
             {filteredItems.map((item) => (
-              <button
+              <div
                 key={item.projectId}
                 onClick={() => handleSelectProject(item)}
-                className="flex flex-col gap-2 text-left group"
+                className="flex flex-col gap-2 text-left group cursor-pointer"
               >
                 {/* Thumbnail with browser frame */}
                 <div className="aspect-[3/2] bg-neutral-300 border border-border rounded-lg pt-5 px-6 overflow-hidden transition-[border-color,box-shadow] duration-150 group-hover:border-border/60 group-hover:shadow-sm">
@@ -253,17 +263,28 @@ export function ProjectsScreen() {
                   </div>
                 </div>
                 {/* Info */}
-                <div className="flex flex-col gap-0.5 px-0.5">
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {item.projectName}
-                  </span>
-                  {item.updatedAt && (
-                    <span className="text-xs text-muted-foreground">
-                      {activeFilter === "archived" ? "Archived" : "Edited"} {formatTimeAgo(item.updatedAt)}
+                <div className="flex items-start gap-1 px-0.5">
+                  <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {item.projectName}
                     </span>
-                  )}
+                    {item.updatedAt && (
+                      <span className="text-xs text-muted-foreground">
+                        {activeFilter === "archived" ? "Archived" : "Edited"} {formatTimeAgo(item.updatedAt)}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavourite.mutate({ id: item.projectId })
+                    }}
+                    className="flex-shrink-0 p-0.5 rounded text-muted-foreground hover:text-amber-500 transition-colors"
+                  >
+                    <Star className={cn("h-3.5 w-3.5", item.isFavourited && "fill-amber-400 text-amber-400")} />
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
