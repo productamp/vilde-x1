@@ -32,7 +32,8 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 6 | UI polish and simplification | Hide dev UI | Done |
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done |
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
-| 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Not started |
+| 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Done |
+| 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Not started |
 | 9 | Project settings | Simplify project settings for non-technical users | Not started |
 | 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
 | 11 | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
@@ -200,6 +201,21 @@ Redesign the home screen in `productVibeMode` as a new-project creation entry po
 - [x] **Auto-create on send** — `createFromTemplate` + scaffold on first send; no manual project creation step.
 - [ ] **Simplify model selector** — hide Ollama models, custom Claude config, extended thinking controls in `productVibeMode`.
 - [ ] **Hide developer slash commands** — suppress `/` commands that expose developer workflows in `productVibeMode`.
+
+### Phase 8a — Rebrand to Vilda
+
+Find and replace all visible "21st" and "1Code" references with "Vilda" throughout the UI and config. Covers displayed text, window titles, about screens, tray menus, and any branding strings that a user would see.
+
+**Scope:**
+- [ ] App window title — `1Code` → `Vilda`
+- [ ] Electron tray / dock menu labels
+- [ ] Any in-app text, tooltips, or help copy referencing "1Code" or "21st"
+- [ ] `package.json` `name` / `productName` fields
+- [ ] `electron-builder` config (app name, bundle ID)
+- [ ] Any references in `README` or visible docs
+- [ ] Sidebar logo label (currently already "ProductVibe" — verify it never shows "1Code")
+
+**Out of scope:** internal variable names, file names, import paths — code identifiers stay as-is.
 
 ### Phase 9 — Project settings
 
