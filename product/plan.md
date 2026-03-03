@@ -34,6 +34,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
 | 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Done |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Not started |
+| 8b | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
 | 9 | Project settings | Simplify project settings for non-technical users | Not started |
 | 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
 | 11 | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
@@ -216,6 +217,42 @@ Find and replace all visible "21st" and "1Code" references with "Vilda" througho
 - [ ] Sidebar logo label (currently already "ProductVibe" — verify it never shows "1Code")
 
 **Out of scope:** internal variable names, file names, import paths — code identifiers stay as-is.
+
+### Phase 8b — Concise response mode
+
+Introduce two response display modes for chat messages. The default for `productVibeMode` is **concise** — action-focused, minimal noise. The existing verbose output becomes **detailed** mode, accessible to power users.
+
+**Problem:** Claude Code responses today are developer-oriented — long tool call logs, file paths, technical commentary. Non-technical users don't need this. They want to know "what is it doing?" and "is it done?".
+
+**Two modes:**
+
+| Mode | Audience | What they see |
+|------|----------|---------------|
+| Concise (default) | Non-technical users | Compact progress indicator + a short "done" summary |
+| Detailed | Developers / debug | Full tool call stream, file paths, all output |
+
+**Concise mode behaviour:**
+- While building: single animated status line (e.g. "Building your site…" or a compact step list like Lovable's left-panel — "Created Header", "Added contact form", "Installed dependencies")
+- On completion: one short paragraph summarising what was built/changed
+- Errors shown clearly in plain language, not stack traces
+- User can toggle to Detailed at any time to see the full log
+
+**Detailed mode behaviour:**
+- Existing message rendering unchanged — all tool calls, file diffs, command output visible
+
+**Implementation notes:**
+- Mode stored as a user preference atom (default: `"concise"`)
+- In `productVibeMode`, default is `"concise"`; toggle available in chat header or settings
+- Concise view collapses tool-call blocks and replaces them with a summarised step list
+- Step list is derived from tool call names/paths as they stream in (no extra API calls)
+- "Detailed" toggle per-chat or global setting
+
+**Controls:**
+- [ ] `responseMode` atom — `"concise" | "detailed"`, default `"concise"` in productVibeMode
+- [ ] Concise message renderer — collapses tool calls into step summary
+- [ ] Animated "building" indicator while stream is active
+- [ ] Completion summary block
+- [ ] Toggle button in chat header (concise ↔ detailed)
 
 ### Phase 9 — Project settings
 
