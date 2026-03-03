@@ -367,7 +367,7 @@ export const agentsSidebarWidthAtom = atomWithStorage<number>(
 // Preview sidebar (right) width and open state
 export const agentsPreviewSidebarWidthAtom = atomWithStorage<number>(
   "agents-preview-sidebar-width",
-  500,
+  800,
   undefined,
   { getOnInit: true },
 )

@@ -568,7 +568,7 @@ export function AgentPreview({
                     viewBox="0 0 400 400"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    aria-label="21st logo"
+                    aria-label="Vilda logo"
                   >
                     <path
                       fillRule="evenodd"
@@ -655,7 +655,7 @@ export function AgentPreview({
                         viewBox="0 0 400 400"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
-                        aria-label="21st logo"
+                        aria-label="Vilda logo"
                       >
                         <path
                           fillRule="evenodd"

@@ -54,7 +54,7 @@ export const worktreeConfigRouter = router({
       z.object({
         projectId: z.string(),
         config: WorktreeConfigSchema,
-        target: z.enum(["cursor", "1code"]).or(z.string()).default("1code"),
+        target: z.enum(["cursor", "vilda"]).or(z.string()).default("vilda"),
       }),
     )
     .mutation(async ({ input }) => {

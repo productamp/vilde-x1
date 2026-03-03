@@ -1346,7 +1346,7 @@ export const chatsRouter = router({
           const authManager = getAuthManager()
           const token = await authManager.getValidToken()
           // Use localhost in dev, production otherwise
-          const apiUrl = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://21st.dev"
+          const apiUrl = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://vilda.dev"
 
           if (!token) {
             apiError = "No auth token available"
@@ -1471,7 +1471,7 @@ export const chatsRouter = router({
         // Online - use web API
         const authManager = getAuthManager()
         const token = await authManager.getValidToken()
-        const apiUrl = "https://21st.dev"
+        const apiUrl = "https://vilda.dev"
 
         console.log(
           "[generateSubChatName] Online - calling API with token:",

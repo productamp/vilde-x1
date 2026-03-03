@@ -33,7 +33,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done |
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
 | 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Done |
-| 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Not started |
+| 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done |
 | 8b | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
 | 9 | Project settings | Simplify project settings for non-technical users | Not started |
 | 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
@@ -205,18 +205,24 @@ Redesign the home screen in `productVibeMode` as a new-project creation entry po
 
 ### Phase 8a — Rebrand to Vilda
 
-Find and replace all visible "21st" and "1Code" references with "Vilda" throughout the UI and config. Covers displayed text, window titles, about screens, tray menus, and any branding strings that a user would see.
+Full rename of all "21st" and "1Code" references to "Vilda" across UI, config, paths, and internal identifiers.
 
-**Scope:**
-- [ ] App window title — `1Code` → `Vilda`
-- [ ] Electron tray / dock menu labels
-- [ ] Any in-app text, tooltips, or help copy referencing "1Code" or "21st"
-- [ ] `package.json` `name` / `productName` fields
-- [ ] `electron-builder` config (app name, bundle ID)
-- [ ] Any references in `README` or visible docs
-- [ ] Sidebar logo label (currently already "ProductVibe" — verify it never shows "1Code")
-
-**Out of scope:** internal variable names, file names, import paths — code identifiers stay as-is.
+**Done:**
+- [x] `package.json` — `productName: "Vilda"`, `appId: "dev.vilda.app"`, URL scheme `"vilda"`, CDN/homepage URLs
+- [x] App window title, tray menu, about screen, MCP auth dialogs — all `Vilda`
+- [x] `app.setName("Vilda")` called before `getPath("userData")` so dev userData uses `Vilda Dev` (not `21st-desktop`)
+- [x] Deep-link protocol — `"twentyfirst-agents"` → `"vilda"` / `"vilda-dev"`
+- [x] Binary name — `/usr/local/bin/1code` → `/usr/local/bin/vilda` (darwin, linux, windows)
+- [x] CLI paths — all `darwin.ts`, `linux.ts`, `windows.ts` platform files updated
+- [x] Project/repo/worktree storage — `~/.21st/` → `~/vilda/` (projects, repos, worktrees)
+- [x] Worktree config — `WorktreeConfigSource` enum `"1code"` → `"vilda"`, config path `.1code/` → `.vilda/` (with backward-compat fallback for `.1code/worktree.json`)
+- [x] OAuth — `CLIENT_NAME = '1code'` → `'vilda'`, hardcoded fallback `clientId = 'vilda'`
+- [x] MCP client name — `"21st-desktop"` → `"vilda"` (HTTP and stdio)
+- [x] Theme IDs — `"21st-dark"` / `"21st-light"` → `"vilda-dark"` / `"vilda-light"` across builtin-themes, shiki-theme-loader, diff-view-highlighter, atoms
+- [x] Session storage key — `"21st-session-info"` → `"vilda-session-info"`
+- [x] All `"https://21st.dev"` references → `"https://vilda.dev"`
+- [x] Sidebar logo, aria-labels, window title bar, regex patterns — all updated
+- [x] Preview sidebar default width — `500px` → `800px` (30% chat / 70% preview split at 1400px window)
 
 ### Phase 8b — Concise response mode
 

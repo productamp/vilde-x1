@@ -13,8 +13,8 @@ import { CURSOR_DARK, CURSOR_LIGHT, CURSOR_MIDNIGHT } from "./cursor-themes"
  * Uses the brand blue (#0034FF) as primary/accent color
  */
 const TWENTYFIRST_DARK: VSCodeFullTheme = {
-  id: "21st-dark",
-  name: "21st Dark",
+  id: "vilda-dark",
+  name: "Vilda Dark",
   type: "dark",
   source: "builtin",
   colors: {
@@ -77,8 +77,8 @@ const TWENTYFIRST_DARK: VSCodeFullTheme = {
  * Uses the brand blue (#0034FF) as primary/accent color
  */
 const TWENTYFIRST_LIGHT: VSCodeFullTheme = {
-  id: "21st-light",
-  name: "21st Light",
+  id: "vilda-light",
+  name: "Vilda Light",
   type: "light",
   source: "builtin",
   colors: {
@@ -947,8 +947,8 @@ export function getBuiltinThemesByType(type: "light" | "dark"): VSCodeFullTheme[
 /**
  * Default theme IDs for light/dark modes
  */
-export const DEFAULT_LIGHT_THEME_ID = "21st-light"
-export const DEFAULT_DARK_THEME_ID = "21st-dark"
+export const DEFAULT_LIGHT_THEME_ID = "vilda-light"
+export const DEFAULT_DARK_THEME_ID = "vilda-dark"
 
 /**
  * Set of builtin theme names (lowercase) for filtering discovered themes

@@ -64,8 +64,8 @@ export class DarwinPlatformProvider extends BasePlatformProvider {
 
   getCliConfig(): CliConfig {
     return {
-      installPath: "/usr/local/bin/1code",
-      scriptName: "1code",
+      installPath: "/usr/local/bin/vilda",
+      scriptName: "vilda",
       requiresAdmin: true, // /usr/local/bin requires admin on macOS
     }
   }

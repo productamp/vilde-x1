@@ -29,7 +29,7 @@ See `product/plan.md` for full details.
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done | |
 | 7 | Workspace-to-projects | Projects screen, cards, favourites, filters | Done | |
 | 8 | New chat form simplification | Hide developer controls in new-chat-form.tsx | Done | |
-| 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Not started | |
+| 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done | |
 | 8b | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
 | 9 | Project settings | Simplify project settings for non-technical users | Not started | |
 | 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |

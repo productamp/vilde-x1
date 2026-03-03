@@ -67,8 +67,8 @@ export class LinuxPlatformProvider extends BasePlatformProvider {
 
   getCliConfig(): CliConfig {
     return {
-      installPath: "/usr/local/bin/1code",
-      scriptName: "1code",
+      installPath: "/usr/local/bin/vilda",
+      scriptName: "vilda",
       requiresAdmin: true, // Usually needs sudo, but we try without first
     }
   }

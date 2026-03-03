@@ -87,7 +87,7 @@ export const projectsRouter = router({
     .mutation(async ({ input }) => {
       const sanitized = sanitizeName(input.name)
       const homePath = app.getPath("home")
-      const projectsDir = join(homePath, ".21st", "projects")
+      const projectsDir = join(homePath, "vilda", "projects")
       const targetPath = join(projectsDir, sanitized)
 
       // Check for duplicate
@@ -371,7 +371,7 @@ export const projectsRouter = router({
 
       // Clone to ~/.21st/repos/{owner}/{repo}
       const homePath = app.getPath("home")
-      const reposDir = join(homePath, ".21st", "repos", owner)
+      const reposDir = join(homePath, "vilda", "repos", owner)
       const clonePath = join(reposDir, repo)
 
       // Check if already cloned
@@ -560,7 +560,7 @@ export const projectsRouter = router({
 
       // Default to ~/.21st/repos/
       const homePath = app.getPath("home")
-      const defaultPath = join(homePath, ".21st", "repos")
+      const defaultPath = join(homePath, "vilda", "repos")
       await mkdir(defaultPath, { recursive: true })
 
       const result = await dialog.showOpenDialog(window, {

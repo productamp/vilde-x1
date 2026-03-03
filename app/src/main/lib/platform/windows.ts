@@ -63,8 +63,8 @@ export class WindowsPlatformProvider extends BasePlatformProvider {
     const home = this.getHome()
 
     return {
-      installPath: path.join(home, ".local", "bin", "1code.cmd"),
-      scriptName: "1code.cmd",
+      installPath: path.join(home, ".local", "bin", "vilda.cmd"),
+      scriptName: "vilda.cmd",
       requiresAdmin: false, // Install to user directory, no admin needed
     }
   }

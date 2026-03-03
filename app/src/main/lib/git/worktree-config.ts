@@ -11,7 +11,7 @@ export interface WorktreeConfig {
   "setup-worktree"?: string[] | string
 }
 
-export type WorktreeConfigSource = "custom" | "cursor" | "1code" | null
+export type WorktreeConfigSource = "custom" | "cursor" | "vilda" | null
 
 export interface DetectedWorktreeConfig {
   config: WorktreeConfig | null
@@ -20,7 +20,8 @@ export interface DetectedWorktreeConfig {
 }
 
 const CURSOR_CONFIG_PATH = ".cursor/worktrees.json"
-const ONECODE_CONFIG_PATH = ".1code/worktree.json"
+const VILDA_CONFIG_PATH = ".vilda/worktree.json"
+const LEGACY_ONECODE_CONFIG_PATH = ".1code/worktree.json"
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -42,7 +43,7 @@ async function readJsonFile<T>(filePath: string): Promise<T | null> {
 
 /**
  * Detect worktree config for a project
- * Priority: custom path > .cursor/worktrees.json > .1code/worktree.json
+ * Priority: custom path > .cursor/worktrees.json > .vilda/worktree.json > .1code/worktree.json (legacy)
  */
 export async function detectWorktreeConfig(
   projectPath: string,
@@ -68,12 +69,21 @@ export async function detectWorktreeConfig(
     }
   }
 
-  // 3. Check .1code/worktree.json
-  const onecodePath = join(projectPath, ONECODE_CONFIG_PATH)
-  if (await fileExists(onecodePath)) {
-    const config = await readJsonFile<WorktreeConfig>(onecodePath)
+  // 3. Check .vilda/worktree.json
+  const vildaPath = join(projectPath, VILDA_CONFIG_PATH)
+  if (await fileExists(vildaPath)) {
+    const config = await readJsonFile<WorktreeConfig>(vildaPath)
     if (config) {
-      return { config, path: onecodePath, source: "1code" }
+      return { config, path: vildaPath, source: "vilda" }
+    }
+  }
+
+  // 4. Legacy fallback: .1code/worktree.json
+  const legacyPath = join(projectPath, LEGACY_ONECODE_CONFIG_PATH)
+  if (await fileExists(legacyPath)) {
+    const config = await readJsonFile<WorktreeConfig>(legacyPath)
+    if (config) {
+      return { config, path: legacyPath, source: "vilda" }
     }
   }
 
@@ -88,19 +98,19 @@ export async function getAvailableConfigPaths(
   projectPath: string,
 ): Promise<{
   cursor: { exists: boolean; path: string }
-  onecode: { exists: boolean; path: string }
+  vilda: { exists: boolean; path: string }
 }> {
   const cursorPath = join(projectPath, CURSOR_CONFIG_PATH)
-  const onecodePath = join(projectPath, ONECODE_CONFIG_PATH)
+  const vildaPath = join(projectPath, VILDA_CONFIG_PATH)
 
   return {
     cursor: {
       exists: await fileExists(cursorPath),
       path: cursorPath,
     },
-    onecode: {
-      exists: await fileExists(onecodePath),
-      path: onecodePath,
+    vilda: {
+      exists: await fileExists(vildaPath),
+      path: vildaPath,
     },
   }
 }
@@ -112,14 +122,14 @@ export async function getAvailableConfigPaths(
 export async function saveWorktreeConfig(
   projectPath: string,
   config: WorktreeConfig,
-  target: "cursor" | "1code" | string = "1code",
+  target: "cursor" | "vilda" | string = "vilda",
 ): Promise<{ success: boolean; path: string; error?: string }> {
   let targetPath: string
 
   if (target === "cursor") {
     targetPath = join(projectPath, CURSOR_CONFIG_PATH)
-  } else if (target === "1code") {
-    targetPath = join(projectPath, ONECODE_CONFIG_PATH)
+  } else if (target === "vilda") {
+    targetPath = join(projectPath, VILDA_CONFIG_PATH)
   } else {
     // Custom path
     targetPath = isAbsolute(target) ? target : join(projectPath, target)

@@ -1483,7 +1483,7 @@ export function CodeIcon({ className }: FrameworkIconProps) {
       className={cn("w-4 h-4 text-muted-foreground", className)}
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="21st.dev Logo"
+      aria-label="Vilda Logo"
     >
       <path
         fillRule="evenodd"
