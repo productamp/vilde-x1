@@ -43,6 +43,7 @@ import {
   selectedProjectAtom,
   getNextMode,
   type AgentMode,
+  desktopViewAtom,
 } from "../atoms"
 import { defaultAgentModeAtom } from "../../../lib/atoms"
 import { productVibeModeAtom } from "../../../lib/product-vibe"
@@ -126,6 +127,29 @@ import {
 } from "../lib/models"
 // import type { PlanType } from "@/lib/config/subscription-plans"
 type PlanType = string
+
+// Random project name generator — adjective + generic noun
+const PV_ADJECTIVES = [
+  "Amber", "Bold", "Brave", "Bright", "Calm", "Clever", "Crisp", "Deep",
+  "Eager", "Easy", "Free", "Fresh", "Gentle", "Golden", "Grand", "Happy",
+  "Kind", "Light", "Lively", "Lucky", "Magical", "Mellow", "Mighty", "Noble",
+  "Open", "Peaceful", "Pure", "Quick", "Quiet", "Rich", "Serene", "Sharp",
+  "Sleek", "Soft", "Sunny", "Swift", "Tender", "True", "Vibrant", "Warm",
+]
+const PV_NOUNS = [
+  "Arrow", "Bear", "Bird", "Blossom", "Brook", "Candle", "Cedar", "Cloud",
+  "Coast", "Coral", "Crane", "Creek", "Dawn", "Dew", "Dove", "Eagle",
+  "Fern", "Finch", "Flame", "Flash", "Forest", "Fox", "Glow", "Harbor",
+  "Hawk", "Iris", "Jade", "Lark", "Leaf", "Lemon", "Maple", "Mint",
+  "Moon", "Oak", "Petal", "Pine", "Rain", "Reed", "River", "Robin",
+  "Rose", "Sage", "Sky", "Sparrow", "Star", "Stone", "Storm", "Stream",
+  "Swan", "Tide", "Tiger", "Trail", "Violet", "Wave", "Willow", "Wolf",
+]
+function generateProjectName(): string {
+  const adj = PV_ADJECTIVES[Math.floor(Math.random() * PV_ADJECTIVES.length)]!
+  const noun = PV_NOUNS[Math.floor(Math.random() * PV_NOUNS.length)]!
+  return `${adj} ${noun}`
+}
 
 // Hook to get available models (including offline models if Ollama is available and debug enabled)
 function useAvailableModels() {
@@ -238,6 +262,20 @@ export function NewChatForm({
   const [workMode, setWorkMode] = useAtom(lastSelectedWorkModeAtom)
   const debugMode = useAtomValue(agentsDebugModeAtom)
   const productVibeMode = useAtomValue(productVibeModeAtom)
+  const setDesktopView = useSetAtom(desktopViewAtom)
+
+  // ProductVibe: auto-generated project name, created lazily on first send
+  const [autoProjectName] = useState(() => generateProjectName())
+  const createFromTemplateMutation = trpc.projects.createFromTemplate.useMutation()
+
+  // ProductVibe: home screen is always for a new project — clear any persisted selection on mount
+  useEffect(() => {
+    if (productVibeMode) {
+      setSelectedProject(null)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const customClaudeConfig = useAtomValue(customClaudeConfigAtom)
   const normalizedCustomClaudeConfig =
     normalizeCustomClaudeConfig(customClaudeConfig)
@@ -1117,7 +1155,38 @@ export function NewChatForm({
     const hasFiles = files.filter((f) => !f.isLoading).length > 0
     const hasPastedTexts = pastedTexts.length > 0
 
-    if ((!hasText && !hasImages && !hasFiles && !hasPastedTexts) || !selectedProject) {
+    if (!hasText && !hasImages && !hasFiles && !hasPastedTexts) {
+      return
+    }
+
+    // ProductVibe: auto-create project from template on first send if no project selected
+    let activeProject = selectedProject
+    if (!activeProject && productVibeMode) {
+      try {
+        const project = await createFromTemplateMutation.mutateAsync({ name: autoProjectName })
+        if (!project) return
+        utils.projects.list.setData(undefined, (oldData) => {
+          if (!oldData) return [project]
+          return [project, ...oldData]
+        })
+        const newProject = {
+          id: project.id,
+          name: project.name,
+          path: project.path,
+          gitRemoteUrl: project.gitRemoteUrl,
+          gitProvider: project.gitProvider as "github" | "gitlab" | "bitbucket" | null,
+          gitOwner: project.gitOwner,
+          gitRepo: project.gitRepo,
+        }
+        setSelectedProject(newProject)
+        activeProject = newProject
+      } catch (err: any) {
+        toast.error(err.message || "Failed to create project")
+        return
+      }
+    }
+
+    if (!activeProject) {
       return
     }
 
@@ -1218,7 +1287,7 @@ export function NewChatForm({
 
     // Create chat with selected project, branch, and initial message
     createChatMutation.mutate({
-      projectId: selectedProject.id,
+      projectId: activeProject.id,
       name: message.trim().slice(0, 50), // Use first 50 chars as chat name
       model: selectedChatModel,
       initialMessageParts: parts.length > 0 ? parts : undefined,
@@ -1234,6 +1303,9 @@ export function NewChatForm({
     selectedProject,
     validatedProject?.path,
     createChatMutation,
+    createFromTemplateMutation,
+    autoProjectName,
+    productVibeMode,
     hasContent,
     selectedBranch,
     selectedBranchType,
@@ -1244,6 +1316,8 @@ export function NewChatForm({
     selectedChatModel,
     agentMode,
     trpcUtils,
+    setSelectedProject,
+    utils,
   ])
 
   const handleMentionSelect = useCallback((mention: FileMentionOption) => {
@@ -1644,18 +1718,23 @@ export function NewChatForm({
 
       <div className="flex flex-1 items-center justify-center overflow-y-auto relative">
         <div className="w-full max-w-2xl space-y-4 md:space-y-6 relative z-10 px-4">
-          {/* Title - only show when project is selected */}
-          {validatedProject && (
-            <div className="text-center">
+          {/* Title - always show in productVibeMode, otherwise only when project selected */}
+          {(productVibeMode || validatedProject) && (
+            <div className="text-center space-y-1.5">
               <h1 className="text-2xl md:text-4xl font-medium tracking-tight">
-                What do you want to get done?
+                {productVibeMode ? "What do you want to build?" : "What do you want to get done?"}
               </h1>
+              {productVibeMode && (
+                <p className="text-sm text-muted-foreground invisible">
+                  {autoProjectName}
+                </p>
+              )}
             </div>
           )}
 
           {/* Input Area or Select Repo State */}
-          {!validatedProject ? (
-            // No project selected - show select repo button (like Sign in button)
+          {!validatedProject && !productVibeMode ? (
+            // No project selected (1Code mode) - show select repo button
             <div className="flex justify-center">
               <button
                 onClick={handleOpenFolder}
@@ -1711,8 +1790,8 @@ export function NewChatForm({
                   </div>
                   <PromptInputActions className="w-full">
                     <div className="flex items-center gap-0.5 flex-1 min-w-0">
-                      {/* Mode toggle (Agent/Plan) */}
-                      <DropdownMenu
+                      {/* Mode toggle (Agent/Plan) — hidden in ProductVibe mode */}
+                      {!productVibeMode && <DropdownMenu
                         open={modeDropdownOpen}
                         onOpenChange={(open) => {
                           setModeDropdownOpen(open)
@@ -1876,7 +1955,7 @@ export function NewChatForm({
                             </div>,
                             document.body,
                           )}
-                      </DropdownMenu>
+                      </DropdownMenu>}
 
                       <div className="group/model-controls flex items-center gap-0.5">
                         <AgentModelSelector
@@ -1973,10 +2052,10 @@ export function NewChatForm({
                         <AgentSendButton
                           isStreaming={false}
                           isSubmitting={
-                            createChatMutation.isPending || isUploading
+                            createChatMutation.isPending || createFromTemplateMutation.isPending || isUploading
                           }
                           disabled={Boolean(
-                            !hasContent || !selectedProject || isUploading,
+                            !hasContent || (!selectedProject && !productVibeMode) || isUploading || createFromTemplateMutation.isPending,
                           )}
                           onClick={handleSend}
                           mode={agentMode}
@@ -1995,10 +2074,11 @@ export function NewChatForm({
 
                 {/* Project, Work Mode, and Branch selectors - directly under input */}
                 <div className="mt-1.5 md:mt-2 ml-[5px] flex items-center gap-2">
-                  <ProjectSelector />
+                  {/* Project selector — hidden in ProductVibe mode (project is auto-created) */}
+                  {!productVibeMode && <ProjectSelector />}
 
-                  {/* Work mode selector - between project and branch */}
-                  {validatedProject && (
+                  {/* Work mode selector — hidden in ProductVibe mode */}
+                  {validatedProject && !productVibeMode && (
                     <WorkModeSelector
                       value={workMode}
                       onChange={setWorkMode}
@@ -2006,8 +2086,8 @@ export function NewChatForm({
                     />
                   )}
 
-                  {/* Branch selector - only visible when worktree mode is selected */}
-                  {validatedProject && workMode === "worktree" && (
+                  {/* Branch selector - only visible when worktree mode is selected and not in ProductVibe mode */}
+                  {validatedProject && workMode === "worktree" && !productVibeMode && (
                     <Popover
                       open={branchPopoverOpen}
                       onOpenChange={(open) => {

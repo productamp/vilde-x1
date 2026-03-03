@@ -32,12 +32,18 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 6 | UI polish and simplification | Hide dev UI | Done |
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done |
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
-| 8 | Project settings | Simplify project settings for non-technical users | Not started |
-| 9 | Onboarding | Simplified setup for non-technical users | Not started |
-| 10 | Publishing | One-click deploy to live URL | Not started |
-| 11 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
-| 12 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
-| 13 | Gemini support | Add Gemini as AI engine | Not started |
+| 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Not started |
+| 9 | Project settings | Simplify project settings for non-technical users | Not started |
+| 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
+| 11 | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
+| 12 | Onboarding | Simplified setup for non-technical users | Not started |
+| 13 | MVP Publish | Working release path for internal testers | Not started |
+| 14 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
+| 15 | Content (CMS) view | Integrated project content management with blog-first workflow | Not started |
+| 16 | Publishing | One-click deploy to live URL | Not started |
+| 17 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
+| 18 | Guided brief generation | Pre-prompt conversation to produce editable project brief | Not started |
+| 19 | Gemini support | Add Gemini as AI engine | Not started |
 
 ### Phase 0 — Setup
 
@@ -162,7 +168,40 @@ Adopt Lovable-style terminology and project management flow. Feature-flagged via
 - [x] **Favourite projects** — star toggle on cards, `isFavourited` DB column, Favourites section in sidebar
 - [x] **Filter tabs** — Drafts / Published / Archived (replaces Recents / All)
 
-### Phase 8 — Project settings
+### Phase 8 — New chat form simplification
+
+Redesign the home screen in `productVibeMode` as a new-project creation entry point. No manual project selection — the user lands, sees a name, types a prompt, and the project is created and built automatically.
+
+**Navigation model (productVibeMode):**
+- `desktopView = null`, no chat → **Home** (`NewChatForm`) — always the starting point
+- `desktopView = "projects"` → **Projects screen** — secondary, accessed via "My Projects →"
+- Chat open → **ChatView** — entered by sending a prompt or selecting an existing project
+- "← Projects" from chat → Projects screen
+- "+ New" from Projects screen → Home (fresh name generated)
+
+**Home screen flow:**
+1. User arrives at Home — `NewChatForm` mounts, a random name is generated immediately.
+2. Name is shown as a muted subheading under "What do you want to get done?" (e.g. "Happy Robin").
+3. User types a prompt and presses send.
+4. `createFromTemplate` runs silently: project directory is created, scaffold starter is cloned.
+5. Chat starts — Claude receives the prompt and begins building the site.
+
+**Name format:** `[Adjective] [Noun]` in Title Case — everyday words from nature, animals, and plants (e.g. "Calm Cedar", "Swift Fox"). A fresh name is generated every time Home mounts.
+
+**Controls:**
+- [x] **Home is NewChatForm** — `projectsScreenMode && !productVibeMode` gates ProjectsScreen; in productVibeMode home falls through to `NewChatForm`.
+- [x] **"My Projects →" link** — small link on Home navigates to `desktopView = "projects"`. Hidden once a project is selected.
+- [x] **"+ New" button** — on Projects screen, resets `desktopView = null` → back to Home with a fresh name.
+- [x] **Environment fixed to local** — `<WorkModeSelector>` hidden via `!productVibeMode`. Always agent mode.
+- [x] **Branch selector hidden** — branch popover hidden via `!productVibeMode`.
+- [x] **Agent/Plan toggle hidden** — mode dropdown hidden via `!productVibeMode`.
+- [x] **Project selector hidden** — `<ProjectSelector>` hidden via `!productVibeMode`.
+- [x] **Auto-generated project name** — random adjective + noun, generated on mount, shown under title.
+- [x] **Auto-create on send** — `createFromTemplate` + scaffold on first send; no manual project creation step.
+- [ ] **Simplify model selector** — hide Ollama models, custom Claude config, extended thinking controls in `productVibeMode`.
+- [ ] **Hide developer slash commands** — suppress `/` commands that expose developer workflows in `productVibeMode`.
+
+### Phase 9 — Project settings
 
 Simplify project settings for non-technical users. Hide developer-centric controls in `productVibeMode`.
 
@@ -172,15 +211,76 @@ Simplify project settings for non-technical users. Hide developer-centric contro
 - [ ] **Delete / archive project** — clear, accessible actions with confirmation dialogs
 - [ ] **Favourite from settings** — toggle favourite status from the project settings panel
 
-### Phase 9 — Onboarding
+### Phase 10 — Pro menu + sitemap
+
+Add a project sitemap canvas that is always synced from real pages/routes.
+
+- [ ] **Sitemap entry point** — add a new `Sitemap` control next to `Preview` in the main panel navigation
+- [ ] **Canvas view** — render a lightweight structural canvas (Relume-style): project node at top, connected child page cards below
+- [ ] **Page card details** — show major page sections per card (for example navbar, hero, CTA, footer)
+- [ ] **Card preview dialog** — clicking a page card opens a modal/dialog preview for that exact page
+- [ ] **Deterministic route sync** — derive sitemap from actual React routes/pages via Node/TypeScript logic (not AI as source of truth)
+- [ ] **Auto-refresh on changes** — update sitemap when route/page files change, including add/remove/rename
+- [ ] **Project-scoped state** — sitemap is per project and not shared globally across projects
+- [ ] **AI enrichment optional** — allow optional AI-only enrichment (for example section naming), while core structure stays deterministic
+
+### Phase 11 — Templates
+
+Add a templates experience to help users start from proven inspirations instead of a blank project.
+
+- [ ] **Templates view** — add a `Templates` view in new-project and project flows with clear entry points
+- [ ] **Template gallery** — card-based gallery with thumbnail, name, and short description
+- [ ] **Filters and preview** — categories/filters and quick preview mode for fast browsing
+- [ ] **Clone/start action** — `Use Template` / `Clone Template` creates a new editable project and opens it immediately
+- [ ] **Template Generator wizard** — guided setup (business type, style, pages, tone) for users who prefer prompts-as-questions
+- [ ] **Wizard output project creation** — generated template output creates a fully editable project baseline
+- [ ] **Chat continuation** — users can immediately continue editing the cloned/generated result in chat
+- [ ] **Inspiration-first behavior** — templates stay starter-ready and reduce blank-page friction for non-technical users
+
+### Phase 12 — Onboarding
 
 Make the first 60 seconds work for someone who's never used a terminal.
+Target outcome: app works automatically without the user opening a terminal.
 
-- [ ] **Simplified onboarding flow** — no CLI jargon, no "install Claude Code" steps
-- [ ] **API key setup** — guide user through getting and entering their key
+- [ ] **Zero-terminal onboarding** — no CLI jargon, no terminal steps, no manual setup
+- [ ] **Automatic environment setup** — detect/install/configure what is needed in-app so users can start immediately
 - [ ] **First project creation** — "What kind of website do you want?" → scaffold → preview
 
-### Phase 10 — Publishing
+### Phase 13 — MVP Publish
+
+Create a working publish path for internal testers (not full public publishing yet).
+
+- [ ] **Internal tester target** — deploy to a single tester-facing environment
+- [ ] **Shareable tester URL** — return a working URL that internal testers can open immediately
+- [ ] **Basic update flow** — push fixes and re-publish quickly for tester re-validation
+- [ ] **Simple failures** — friendly error states with one retry path for internal testing
+
+### Phase 14 — Scaffold optimisation
+
+Improve the starter template based on what we've learned from real usage.
+
+- [ ] **Smarter defaults** — pre-populate with layout, routing, and page structure that matches common user requests
+- [ ] **Prompt-aware scaffolding** — tailor the starter based on what the user asks for ("blog", "portfolio", "landing page")
+- [ ] **Improved design skills** — upgrade scaffolded design quality (typography, spacing, color systems, component polish) so first output looks production-ready
+- [ ] **Template variants** — multiple starter templates for different site types
+- [ ] **Reduce first-build time** — optimise dependencies, trim unused components, speed up `npm install`
+
+### Phase 15 — Content (CMS) view
+
+Add an integrated, project-level CMS workflow with `Blog` as the default content type.
+
+- [ ] **Content entry point** — add a new `Content` view after `Preview` in project views/navigation
+- [ ] **Blog-first collections** — default `Blog` collection plus support for additional user-defined content types
+- [ ] **Three-panel CMS layout** — collection list, content item list, and content editor (read/edit modes)
+- [ ] **Core editorial actions** — create item, edit item, save, set draft/published status, publish updates
+- [ ] **Search and filtering** — fast item discovery by title/status/date and optional language/category
+- [ ] **Chat integration** — chat can create/update content items directly; manual edits and chat edits remain synced
+- [ ] **Editorial controls sub-view** — style, tone, voice guidelines, audience level, length/depth, SEO/editorial preferences
+- [ ] **Source-of-truth sync** — reads/writes from the real website content source, with view auto-refresh on file changes
+- [ ] **Project-scoped content model** — content always belongs to the active project (never global)
+- [ ] **Autopilot (Pro) workflows** — optional scheduled/automated generation and adaptation in the same CMS workflow
+
+### Phase 16 — Publishing
 
 The other half of the value prop. Users need their site on the internet.
 
@@ -188,16 +288,7 @@ The other half of the value prop. Users need their site on the internet.
 - [ ] **One-click publish** — from preview to live URL with minimal steps
 - [ ] **Update flow** — chat to change → preview → re-publish
 
-### Phase 11 — Scaffold optimisation
-
-Improve the starter template based on what we've learned from real usage.
-
-- [ ] **Smarter defaults** — pre-populate with layout, routing, and page structure that matches common user requests
-- [ ] **Prompt-aware scaffolding** — tailor the starter based on what the user asks for ("blog", "portfolio", "landing page")
-- [ ] **Template variants** — multiple starter templates for different site types
-- [ ] **Reduce first-build time** — optimise dependencies, trim unused components, speed up `npm install`
-
-### Phase 12 — UI and settings simplification
+### Phase 17 — UI and settings simplification
 
 Simplify message views and hide developer-facing settings.
 
@@ -213,7 +304,18 @@ Simplify message views and hide developer-facing settings.
 - [ ] **Simplify Profile tab** — hide team features, show name/avatar only
 - [ ] **Projects tab** — verify worktree section is already gated
 
-### Phase 13 — Gemini support
+### Phase 18 — Guided brief generation
+
+Add a guided pre-prompt flow that captures intent and turns it into a project-specific `brief.md` used for first generation.
+
+- [ ] **Guided pre-prompt chat** — on new project creation, run a short structured conversation to validate what the user wants to build
+- [ ] **Generate `brief.md`** — create a project-level `brief.md` from the pre-prompt answers using a consistent structure (business context, goals, audience, pages, tone, visual direction, constraints)
+- [ ] **Editable brief UX** — let users open and edit `brief.md` directly before generation
+- [ ] **First prompt source of truth** — use the latest saved `brief.md` as the first generation prompt for the project
+- [ ] **Regenerate loop** — when users update `brief.md`, regenerate from the updated brief
+- [ ] **Chat/brief alignment** — keep pre-prompt answers and brief content in sync so generation reflects the latest intent
+
+### Phase 19 — Gemini support
 
 Add Gemini as an AI engine option. Claude Code and Codex are already supported.
 
@@ -283,6 +385,6 @@ Everything below is gated on `productVibeMode === true`.
 ### Not in scope (Phase 6)
 
 - Blog content support — moved to verification. Template from Phase 3 already supports it. Just confirm AI instructions guide correct generation.
-- Onboarding — Phase 8.
-- Message view simplification — moved to Phase 11.
-- Settings dialog simplification — moved to Phase 11.
+- Onboarding — Phase 11.
+- Message view simplification — moved to Phase 16.
+- Settings dialog simplification — moved to Phase 16.

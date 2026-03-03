@@ -249,11 +249,12 @@ export function AgentsContent() {
   // Note: Archive mutations moved to AgentsSidebar to share undo stack with Cmd+Z
 
   // Auto-route to Home (new-chat) when no chat is selected in projectsScreenMode
+  // In productVibeMode, home is NewChatForm (desktopView = null) — skip this redirect
   useEffect(() => {
-    if (projectsScreenMode && !selectedChatId && !desktopView) {
+    if (projectsScreenMode && !productVibeMode && !selectedChatId && !desktopView) {
       setDesktopView("new-chat")
     }
-  }, [projectsScreenMode, selectedChatId, desktopView, setDesktopView])
+  }, [projectsScreenMode, productVibeMode, selectedChatId, desktopView, setDesktopView])
 
   // Track hydration
   useEffect(() => {
@@ -302,6 +303,13 @@ export function AgentsContent() {
       setPreviewSidebarOpen(false)
     }
   }, [isMobile, isHydrated, setSidebarOpen, setPreviewSidebarOpen])
+
+  // ProductVibe: ensure sidebar is open at home (no chat selected)
+  useEffect(() => {
+    if (productVibeMode && !selectedChatId && !sidebarOpen) {
+      setSidebarOpen(true)
+    }
+  }, [productVibeMode, selectedChatId, sidebarOpen, setSidebarOpen])
 
   // On mobile: when chat is selected, switch to chat mode
   useEffect(() => {
@@ -1090,7 +1098,7 @@ export function AgentsContent() {
                 selectedTeamName={selectedTeam?.name}
                 selectedTeamImageUrl={selectedTeam?.image_url}
                 onBackToProjects={projectsScreenMode ? () => {
-                  setDesktopView("projects")
+                  setDesktopView(productVibeMode ? null : "projects")
                   setSelectedChatId(null)
                 } : undefined}
               />
@@ -1099,7 +1107,7 @@ export function AgentsContent() {
             <div className="h-full flex flex-col relative overflow-hidden">
               <NewChatForm key={`new-chat-${newChatFormKeyRef.current}`} />
             </div>
-          ) : projectsScreenMode ? (
+          ) : projectsScreenMode && !productVibeMode ? (
             <ProjectsScreen />
           ) : betaKanbanEnabled ? (
             <KanbanView />

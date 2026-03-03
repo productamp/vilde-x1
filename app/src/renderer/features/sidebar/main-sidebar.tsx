@@ -31,6 +31,7 @@ import {
   selectedProjectAtom,
   lastSelectedWorkModeAtom,
 } from "../agents/atoms"
+import { productVibeModeAtom } from "../../lib/product-vibe"
 import { useResolvedHotkeyDisplay } from "../../lib/hotkeys"
 import { AgentsHelpPopover } from "../agents/components/agents-help-popover"
 import { ArchivePopover } from "../agents/ui/archive-popover"
@@ -46,6 +47,7 @@ export function MainSidebar() {
   const setSettingsActiveTab = useSetAtom(agentsSettingsDialogActiveTabAtom)
   const setSettingsDialogOpen = useSetAtom(agentsSettingsDialogOpenAtom)
   const settingsHotkey = useResolvedHotkeyDisplay("open-settings")
+  const productVibeMode = useAtomValue(productVibeModeAtom)
 
   const setSelectedProject = useSetAtom(selectedProjectAtom)
   const setWorkMode = useSetAtom(lastSelectedWorkModeAtom)
@@ -68,7 +70,7 @@ export function MainSidebar() {
   }, [setSettingsActiveTab, setSettingsDialogOpen])
 
   return (
-    <div className="flex flex-col h-full select-none">
+    <div className="flex flex-col h-full select-none bg-tl-background">
       {/* Header */}
       <div className="flex-shrink-0 px-3 pt-3 pb-4">
         <div className="flex items-center gap-2 px-1.5 h-6">
@@ -85,11 +87,11 @@ export function MainSidebar() {
           onClick={() => {
             setSelectedChatId(null)
             setSelectedDraftId(null)
-            setDesktopView("new-chat")
+            setDesktopView(productVibeMode ? null : "new-chat")
           }}
           className={cn(
             "flex items-center gap-2 w-full px-3 py-1.5 text-sm h-8 rounded-md font-medium transition-colors duration-75 cursor-pointer",
-            desktopView === "new-chat"
+            (productVibeMode ? !desktopView : desktopView === "new-chat")
               ? "bg-foreground/5 text-foreground"
               : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
           )}
@@ -171,11 +173,11 @@ export function MainSidebar() {
             <TooltipContent>Settings{settingsHotkey && <> <Kbd>{settingsHotkey}</Kbd></>}</TooltipContent>
           </Tooltip>
 
-          {/* Help */}
-          <HelpButton />
+          {/* Help — hidden in ProductVibe mode */}
+          {!productVibeMode && <HelpButton />}
 
-          {/* Archive */}
-          <ArchiveButton archivedChatsCount={archivedChatsCount} />
+          {/* Archive — hidden in ProductVibe mode */}
+          {!productVibeMode && <ArchiveButton archivedChatsCount={archivedChatsCount} />}
         </div>
 
         {/* Feedback */}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { Search, Star } from "lucide-react"
+import { RotateCcw, Search, Star } from "lucide-react"
 
 import { Input } from "../../../components/ui/input"
 import { cn } from "../../../lib/utils"
@@ -21,6 +21,7 @@ interface ProjectItem {
   projectId: string
   projectName: string
   chatId: string
+  chatName?: string | null
   updatedAt: Date | null
   displayUrl: string
   isFavourited: boolean
@@ -50,6 +51,12 @@ export function ProjectsScreen() {
   const toggleFavourite = trpc.projects.toggleFavourite.useMutation({
     onSuccess: () => utils.projects.list.invalidate(),
   })
+  const restoreChat = trpc.chats.restore.useMutation({
+    onSuccess: () => {
+      utils.chats.listArchived.invalidate()
+      utils.chats.list.invalidate()
+    },
+  })
 
   // Build project list based on active filter
   const projectItems = useMemo(() => {
@@ -57,34 +64,19 @@ export function ProjectsScreen() {
 
     if (activeFilter === "archived") {
       if (!archivedChats) return []
-      const archivedByProject = new Map<string, typeof archivedChats[0]>()
-      for (const chat of archivedChats) {
-        const existing = archivedByProject.get(chat.projectId)
-        if (!existing || (chat.archivedAt && existing.archivedAt && chat.archivedAt > existing.archivedAt)) {
-          archivedByProject.set(chat.projectId, chat)
-        }
-      }
-
-      const items: ProjectItem[] = []
-
-      for (const [projectId, chat] of archivedByProject) {
-        const project = projects.find((p) => p.id === projectId)
-        if (!project) continue
-        items.push({
-          projectId,
-          projectName: project.name,
+      const items: ProjectItem[] = archivedChats.map((chat) => {
+        const project = projects.find((p) => p.id === chat.projectId)
+        return {
+          projectId: chat.projectId,
+          projectName: project?.name ?? "Unknown project",
           chatId: chat.id,
+          chatName: chat.name,
           updatedAt: chat.archivedAt,
-          displayUrl: project.gitOwner && project.gitRepo ? `${project.gitOwner}/${project.gitRepo}` : project.name,
-          isFavourited: !!project.isFavourited,
-        })
-      }
-
-      items.sort((a, b) => {
-        const aTime = a.updatedAt?.getTime() ?? 0
-        const bTime = b.updatedAt?.getTime() ?? 0
-        return bTime - aTime
+          displayUrl: project?.name ?? chat.projectId,
+          isFavourited: !!project?.isFavourited,
+        }
       })
+      items.sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
       return items
     }
 
@@ -179,6 +171,13 @@ export function ProjectsScreen() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Projects</h1>
 
           <div className="flex items-center gap-2">
+            {/* New Project */}
+            <button
+              onClick={() => setDesktopView(null)}
+              className="h-7 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+            >
+              + New
+            </button>
             {/* Filter tabs */}
             <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
               {FILTER_TABS.map((tab) => (
@@ -241,6 +240,35 @@ export function ProjectsScreen() {
                     : "No projects yet"}
             </p>
           </div>
+        ) : activeFilter === "archived" ? (
+          <div className="flex flex-col max-w-xl">
+            {filteredItems.map((item) => (
+              <div
+                key={item.chatId}
+                onClick={() => handleSelectProject(item)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group hover:bg-foreground/5 transition-colors duration-75"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-foreground truncate">
+                    {item.chatName || <span className="text-muted-foreground">Untitled chat</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {item.projectName}{item.updatedAt ? ` · ${formatTimeAgo(item.updatedAt)}` : ""}
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    restoreChat.mutate({ id: item.chatId })
+                  }}
+                  className="flex-shrink-0 p-1 rounded text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-[opacity,color] duration-150"
+                  title="Restore"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-10">
             {filteredItems.map((item) => (
@@ -270,7 +298,7 @@ export function ProjectsScreen() {
                     </span>
                     {item.updatedAt && (
                       <span className="text-xs text-muted-foreground">
-                        {activeFilter === "archived" ? "Archived" : "Edited"} {formatTimeAgo(item.updatedAt)}
+                        Edited {formatTimeAgo(item.updatedAt)}
                       </span>
                     )}
                   </div>

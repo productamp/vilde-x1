@@ -28,12 +28,18 @@ See `product/plan.md` for full details.
 | 6 | UI polish and simplification | Hide dev UI, simplify messages | Done | |
 | 6b | File viewer layout simplification | Merge file viewer into the same panel | Done | |
 | 7 | Workspace-to-projects | Projects screen, cards, favourites, filters | Done | |
-| 8 | Project settings | Simplify project settings for non-technical users | Not started | |
-| 9 | Onboarding | Simplified setup for non-technical users | Not started | |
-| 10 | Publishing | One-click deploy to live URL | Not started | |
-| 11 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
-| 12 | UI and settings simplification | Simplify message views, hide developer tabs | Not started | |
-| 13 | Gemini support | Add Gemini as AI engine | Not started | |
+| 8 | New chat form simplification | Hide developer controls in new-chat-form.tsx | Not started | |
+| 9 | Project settings | Simplify project settings for non-technical users | Not started | |
+| 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
+| 11 | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
+| 12 | Onboarding | Simplified setup for non-technical users | Not started | |
+| 13 | MVP Publish | Working release path for internal testers | Not started | |
+| 14 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
+| 15 | Content (CMS) view | Integrated project content management with blog-first workflow | Not started | |
+| 16 | Publishing | One-click deploy to live URL | Not started | |
+| 17 | UI and settings simplification | Simplify message views, hide developer tabs | Not started | |
+| 18 | Guided brief generation | Pre-prompt conversation to produce editable project brief | Not started | |
+| 19 | Gemini support | Add Gemini as AI engine | Not started | |
 
 ## Key files in app (1Code)
 
