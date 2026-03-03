@@ -220,38 +220,37 @@ Find and replace all visible "21st" and "1Code" references with "Vilda" througho
 
 ### Phase 8b — Concise response mode
 
-Introduce two response display modes for chat messages. The default for `productVibeMode` is **concise** — action-focused, minimal noise. The existing verbose output becomes **detailed** mode, accessible to power users.
+**Purely cosmetic.** No changes to the prompt, system prompt, or what Claude is asked to do. Only how the existing response stream is rendered in the UI.
 
-**Problem:** Claude Code responses today are developer-oriented — long tool call logs, file paths, technical commentary. Non-technical users don't need this. They want to know "what is it doing?" and "is it done?".
+**Problem:** The current message view exposes every tool call, file path, and raw output. Non-technical users don't read it — it's noise that makes the app feel like a terminal.
 
-**Two modes:**
+**Two display modes (same underlying data):**
 
-| Mode | Audience | What they see |
-|------|----------|---------------|
-| Concise (default) | Non-technical users | Compact progress indicator + a short "done" summary |
-| Detailed | Developers / debug | Full tool call stream, file paths, all output |
+| Mode | What the user sees |
+|------|--------------------|
+| Concise (default in productVibeMode) | Collapsed tool calls → compact step list, streaming live as actions arrive |
+| Detailed | Current rendering unchanged — full tool call blocks, file diffs, all output |
 
-**Concise mode behaviour:**
-- While building: single animated status line (e.g. "Building your site…" or a compact step list like Lovable's left-panel — "Created Header", "Added contact form", "Installed dependencies")
-- On completion: one short paragraph summarising what was built/changed
-- Errors shown clearly in plain language, not stack traces
-- User can toggle to Detailed at any time to see the full log
+**Concise mode — visual behaviour:**
+- Tool call blocks are collapsed into a single compact row each (icon + short label derived from the tool name and path, e.g. "Wrote `src/App.tsx`", "Ran `npm install`")
+- Rows appear one by one as the stream arrives — no waiting for completion
+- An animated pulse/spinner on the active row while streaming
+- Claude's plain text replies (non-tool) render as normal
+- No summarisation, no extra API calls — purely a different rendering of the same stream
 
-**Detailed mode behaviour:**
-- Existing message rendering unchanged — all tool calls, file diffs, command output visible
+**Detailed mode:**
+- Existing message rendering unchanged
 
 **Implementation notes:**
-- Mode stored as a user preference atom (default: `"concise"`)
-- In `productVibeMode`, default is `"concise"`; toggle available in chat header or settings
-- Concise view collapses tool-call blocks and replaces them with a summarised step list
-- Step list is derived from tool call names/paths as they stream in (no extra API calls)
-- "Detailed" toggle per-chat or global setting
+- `responseModeAtom` — `"concise" | "detailed"`, default `"concise"` in productVibeMode
+- Concise renderer reads the same tool-call events already in the message stream
+- Label derivation is local string logic (tool name + first meaningful path/arg)
+- Toggle button in chat header switches modes live without re-fetching
 
 **Controls:**
-- [ ] `responseMode` atom — `"concise" | "detailed"`, default `"concise"` in productVibeMode
-- [ ] Concise message renderer — collapses tool calls into step summary
-- [ ] Animated "building" indicator while stream is active
-- [ ] Completion summary block
+- [ ] `responseModeAtom` — persisted preference, default `"concise"` in productVibeMode
+- [ ] Concise renderer component — maps tool-call events to compact labeled rows
+- [ ] Animated active-row indicator while stream is live
 - [ ] Toggle button in chat header (concise ↔ detailed)
 
 ### Phase 9 — Project settings
