@@ -30,10 +30,10 @@ See `product/plan.md` for full details.
 | 7 | Workspace-to-projects | Projects screen, cards, favourites, filters | Done | |
 | 8 | New chat form simplification | Hide developer controls in new-chat-form.tsx | Done | |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done | |
-| 8b | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
-| 9 | Project settings | Simplify project settings for non-technical users | Not started | |
-| 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
-| 11 | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
+| 8b | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
+| 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
+| 10 | Project settings | Simplify project settings for non-technical users | Not started | |
+| 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
 | 12 | Onboarding | Simplified setup for non-technical users | Not started | |
 | 13 | MVP Publish | Working release path for internal testers | Not started | |
 | 14 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
@@ -42,6 +42,7 @@ See `product/plan.md` for full details.
 | 17 | UI and settings simplification | Simplify message views, hide developer tabs | Not started | |
 | 18 | Guided brief generation | Pre-prompt conversation to produce editable project brief | Not started | |
 | 19 | Gemini support | Add Gemini as AI engine | Not started | |
+| 20 | Demo video | Auto-generate a demo video of the published landing page (Pro) | Not started | |
 
 ## Key files in app (1Code)
 

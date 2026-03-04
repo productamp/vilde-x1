@@ -34,10 +34,10 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
 | 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Done |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done |
-| 8b | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
-| 9 | Project settings | Simplify project settings for non-technical users | Not started |
-| 10 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
-| 11 | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
+| 8b | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
+| 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
+| 10 | Project settings | Simplify project settings for non-technical users | Not started |
+| 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
 | 12 | Onboarding | Simplified setup for non-technical users | Not started |
 | 13 | MVP Publish | Working release path for internal testers | Not started |
 | 14 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
@@ -46,6 +46,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 17 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
 | 18 | Guided brief generation | Pre-prompt conversation to produce editable project brief | Not started |
 | 19 | Gemini support | Add Gemini as AI engine | Not started |
+| 20 | Demo video | Auto-generate a demo video of the published landing page (Pro) | Not started |
 
 ### Phase 0 — Setup
 
@@ -224,7 +225,20 @@ Full rename of all "21st" and "1Code" references to "Vilda" across UI, config, p
 - [x] Sidebar logo, aria-labels, window title bar, regex patterns — all updated
 - [x] Preview sidebar default width — `500px` → `800px` (30% chat / 70% preview split at 1400px window)
 
-### Phase 8b — Concise response mode
+### Phase 8b — Templates
+
+Add a templates experience to help users start from proven inspirations instead of a blank project.
+
+- [ ] **Templates view** — add a `Templates` view in new-project and project flows with clear entry points
+- [ ] **Template gallery** — card-based gallery with thumbnail, name, and short description
+- [ ] **Filters and preview** — categories/filters and quick preview mode for fast browsing
+- [ ] **Clone/start action** — `Use Template` / `Clone Template` creates a new editable project and opens it immediately
+- [ ] **Template Generator wizard** — guided setup (business type, style, pages, tone) for users who prefer prompts-as-questions
+- [ ] **Wizard output project creation** — generated template output creates a fully editable project baseline
+- [ ] **Chat continuation** — users can immediately continue editing the cloned/generated result in chat
+- [ ] **Inspiration-first behavior** — templates stay starter-ready and reduce blank-page friction for non-technical users
+
+### Phase 9 — Concise response mode
 
 **Purely cosmetic.** No changes to the prompt, system prompt, or what Claude is asked to do. Only how the existing response stream is rendered in the UI.
 
@@ -259,7 +273,7 @@ Full rename of all "21st" and "1Code" references to "Vilda" across UI, config, p
 - [ ] Animated active-row indicator while stream is live
 - [ ] Toggle button in chat header (concise ↔ detailed)
 
-### Phase 9 — Project settings
+### Phase 10 — Project settings
 
 Simplify project settings for non-technical users. Hide developer-centric controls in `productVibeMode`.
 
@@ -269,7 +283,7 @@ Simplify project settings for non-technical users. Hide developer-centric contro
 - [ ] **Delete / archive project** — clear, accessible actions with confirmation dialogs
 - [ ] **Favourite from settings** — toggle favourite status from the project settings panel
 
-### Phase 10 — Pro menu + sitemap
+### Phase 11 — Pro menu + sitemap
 
 Add a project sitemap canvas that is always synced from real pages/routes.
 
@@ -281,19 +295,6 @@ Add a project sitemap canvas that is always synced from real pages/routes.
 - [ ] **Auto-refresh on changes** — update sitemap when route/page files change, including add/remove/rename
 - [ ] **Project-scoped state** — sitemap is per project and not shared globally across projects
 - [ ] **AI enrichment optional** — allow optional AI-only enrichment (for example section naming), while core structure stays deterministic
-
-### Phase 11 — Templates
-
-Add a templates experience to help users start from proven inspirations instead of a blank project.
-
-- [ ] **Templates view** — add a `Templates` view in new-project and project flows with clear entry points
-- [ ] **Template gallery** — card-based gallery with thumbnail, name, and short description
-- [ ] **Filters and preview** — categories/filters and quick preview mode for fast browsing
-- [ ] **Clone/start action** — `Use Template` / `Clone Template` creates a new editable project and opens it immediately
-- [ ] **Template Generator wizard** — guided setup (business type, style, pages, tone) for users who prefer prompts-as-questions
-- [ ] **Wizard output project creation** — generated template output creates a fully editable project baseline
-- [ ] **Chat continuation** — users can immediately continue editing the cloned/generated result in chat
-- [ ] **Inspiration-first behavior** — templates stay starter-ready and reduce blank-page friction for non-technical users
 
 ### Phase 12 — Onboarding
 
@@ -380,6 +381,33 @@ Add Gemini as an AI engine option. Claude Code and Codex are already supported.
 - [ ] **Gemini CLI integration** — wrap Gemini CLI the same way we wrap Claude Code and Codex
 - [ ] **Engine selector** — choose your AI engine in settings
 - [ ] **Blog content support** — generate and serve multi-page blog sites (posts, index, navigation)
+
+### Phase 20 — Demo video
+
+**Pro feature.** Automatically generate a short demo video of the published landing page using [webreel](https://github.com/vercel-labs/webreel) — Vercel's headless browser recording library.
+
+**What it is:** webreel drives a headless Chrome instance through a scripted sequence (scroll, hover, click), captures frames at ~60fps, and encodes to MP4/GIF/WebM via ffmpeg. No manual screen recording. No external service. Runs locally.
+
+**User flow:**
+1. User publishes their landing page (or previews locally)
+2. Clicks "Generate demo video" in the project panel (Pro only)
+3. Vilda auto-scripts a scroll-and-highlight walkthrough of the page
+4. webreel records and encodes — returns an MP4 or GIF
+5. User downloads or shares directly
+
+**Implementation notes:**
+- Uses `@webreel/core` + `webreel` CLI packages — auto-downloads Chrome and ffmpeg to `~/.webreel` on first use
+- Script is auto-generated from page structure (sections, headings, CTAs) — no manual JSON config needed from user
+- Runs in the Electron main process via Node child process
+- Output saved to project folder (`/demo.mp4`)
+- Gated behind Pro flag (same `productVibeMode` + Pro tier check)
+
+**Controls:**
+- [ ] **Pro gate** — feature hidden unless Pro tier is active
+- [ ] **Auto-script generator** — derive webreel step JSON from live page DOM (scroll to each section, pause, highlight CTAs)
+- [ ] **webreel runner** — invoke `webreel record` from main process, stream progress to renderer
+- [ ] **Output handler** — save MP4 to project folder, show download/share UI on completion
+- [ ] **Progress indicator** — show recording and encoding status in chat/project panel
 
 ---
 
