@@ -34,7 +34,8 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
 | 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Done |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done |
-| 8b | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
+| 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Not started |
+| 8c | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
 | 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
 | 10 | Project settings | Simplify project settings for non-technical users | Not started |
 | 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
@@ -225,7 +226,45 @@ Full rename of all "21st" and "1Code" references to "Vilda" across UI, config, p
 - [x] Sidebar logo, aria-labels, window title bar, regex patterns — all updated
 - [x] Preview sidebar default width — `500px` → `800px` (30% chat / 70% preview split at 1400px window)
 
-### Phase 8b — Templates
+### Phase 8b — Master prompt
+
+Write and wire in a Vilda-specific system prompt that steers every Claude Code session toward producing high-quality, best-practice websites. No changes to the user's chat input — this operates silently as the agent's standing instruction set.
+
+**Why it matters:** Without a strong system prompt, Claude Code produces developer-oriented output — inconsistent design, raw HTML, no mobile layout, missing accessibility, verbose code comments. The master prompt corrects this at the root.
+
+**Reference examples:**
+- [v0 prompt](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools/blob/main/v0%20Prompts%20and%20Tools/Prompt.txt) — strict design constraints (3-5 colours, 2 fonts, mobile-first), Next.js stack specifics, integration guidance
+- [Lovable prompt](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools/blob/main/Lovable/Agent%20Prompt.txt) — "wow" first output, semantic design tokens, batched tool calls, discuss-before-code discipline
+
+**Vilda master prompt scope:**
+
+| Category | What to specify |
+|----------|----------------|
+| Stack | Vite + React + Tailwind + shadcn/ui + React Router — always, no exceptions |
+| Design quality | Mobile-first, 3–4 colour palette, 2 font families max, consistent spacing scale |
+| Component discipline | Use shadcn components before writing custom ones; no inline styles |
+| First output | Prioritise a visually complete, working page — not a skeleton or placeholder |
+| File structure | Standard layout: `src/pages/`, `src/components/`, `src/lib/` |
+| Routing | React Router v6, each page is a route, no hash routing |
+| Images | Use Unsplash URLs for placeholder images, never broken `<img>` tags |
+| Accessibility | Semantic HTML, alt text on images, keyboard-navigable interactive elements |
+| Performance | No unnecessary dependencies, lazy-load heavy components |
+| Tone | No code comments explaining the obvious; no "TODO" stubs left in output |
+| Non-technical context | User is not a developer — no jargon in UI copy, no exposed file paths |
+
+**Implementation:**
+- Prompt lives in a version-controlled file (e.g. `app/src/main/prompts/vilda-system.md`)
+- Injected as the system prompt when creating a new Claude Code session in `productVibeMode`
+- In developer/1Code mode, the stock Claude Code behaviour is unchanged
+- Prompt is iteratively refined as we learn what produces the best first output
+
+**Controls:**
+- [ ] Write initial `vilda-system.md` prompt covering all categories above
+- [ ] Wire prompt into Claude Code session creation in `productVibeMode`
+- [ ] A/B test prompt versions against real first-send outputs
+- [ ] Version-control prompt with changelog notes
+
+### Phase 8c — Templates
 
 Add a templates experience to help users start from proven inspirations instead of a blank project.
 

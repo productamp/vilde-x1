@@ -30,7 +30,8 @@ See `product/plan.md` for full details.
 | 7 | Workspace-to-projects | Projects screen, cards, favourites, filters | Done | |
 | 8 | New chat form simplification | Hide developer controls in new-chat-form.tsx | Done | |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done | |
-| 8b | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
+| 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Not started | |
+| 8c | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
 | 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
 | 10 | Project settings | Simplify project settings for non-technical users | Not started | |
 | 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
