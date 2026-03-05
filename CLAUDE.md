@@ -32,6 +32,7 @@ See `product/plan.md` for full details.
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done | |
 | 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Not started | |
 | 8c | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
+| 8d | shadcn-blocks | Include shadcn-ui-blocks in scaffold; instruct Claude to use blocks before building custom | Not started | |
 | 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
 | 10 | Project settings | Simplify project settings for non-technical users | Not started | |
 | 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
@@ -73,3 +74,12 @@ bun run db:push          # Push schema directly (dev only)
 - Atoms: camelCase with `Atom` suffix (`selectedAgentChatIdAtom`)
 - IPC: tRPC with `trpc-electron` (type-safe main <-> renderer)
 - State: Jotai (UI), Zustand (persisted), React Query (server via tRPC)
+
+## Generated site conventions (productVibeMode)
+
+When building or modifying pages inside a user's generated project:
+
+- **Block-first:** check `src/blocks/` for an existing [shadcn-ui-blocks](https://github.com/shadcnblocks/shadcn-ui-blocks) section before writing a custom component. Use or adapt it. Only write custom if no block fits.
+- **Stack is fixed:** Vite + React + Tailwind + shadcn/ui + React Router. No substitutions.
+- **Mobile-first:** every section must be responsive. Test layout at `sm`, `md`, `lg`.
+- **Design constraints:** max 4 colours from the project palette, max 2 font families, consistent spacing scale.

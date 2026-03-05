@@ -36,6 +36,7 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done |
 | 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Not started |
 | 8c | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
+| 8d | shadcn-blocks | Include shadcn-ui-blocks in scaffold; instruct Claude to use blocks before building custom | Not started |
 | 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
 | 10 | Project settings | Simplify project settings for non-technical users | Not started |
 | 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
@@ -276,6 +277,31 @@ Add a templates experience to help users start from proven inspirations instead 
 - [ ] **Wizard output project creation** — generated template output creates a fully editable project baseline
 - [ ] **Chat continuation** — users can immediately continue editing the cloned/generated result in chat
 - [ ] **Inspiration-first behavior** — templates stay starter-ready and reduce blank-page friction for non-technical users
+
+### Phase 8d — shadcn-blocks
+
+Bundle [shadcn-ui-blocks](https://github.com/shadcnblocks/shadcn-ui-blocks) — 55 free marketing blocks built on shadcn/ui + Tailwind — into the default project scaffold. Update the master prompt and `CLAUDE.md` to instruct Claude to reach for an existing block before building a custom component. Produces consistent, high-quality output with zero extra design effort.
+
+**What shadcn-blocks provides:**
+- 55 free, production-ready marketing section blocks: hero, features, pricing, testimonials, FAQ, CTA, footer, navbar, and more
+- Built on shadcn/ui + Tailwind CSS + React — matches the Vilda stack exactly
+- Installable via the official shadcn CLI: `npx shadcn@latest add <block-url>`
+- All TypeScript, accessible, mobile-responsive out of the box
+
+**Why it matters:** Without a curated block library, Claude improvises every section from scratch — inconsistent spacing, ad-hoc colour usage, variable quality. With blocks pre-installed, Claude assembles proven sections like Lego pieces, giving non-technical users a polished result on the first try.
+
+**Implementation:**
+
+1. **Scaffold integration** — add the most-used blocks to the default project template during `createFromTemplate` so they're available immediately in every new project:
+   - `hero-1`, `features-1`, `pricing-1`, `testimonials-1`, `cta-1`, `faq-1`, `footer-1`, `navbar-1`
+2. **Master prompt instruction** — add a section to `vilda-system.md` (Phase 8b) that tells Claude: "Before building a new section, check `/src/blocks/` for an existing block. Use it directly or adapt it. Only write a custom component if no block fits."
+3. **CLAUDE.md instruction** — add a brief rule to `CLAUDE.md` so the development AI assistant also respects the block-first convention during codebase work.
+
+**Controls:**
+- [ ] Add selected shadcn-blocks to the default scaffold template (`app/resources/templates/default/`)
+- [ ] Update `vilda-system.md` with block-first instruction and list of available blocks
+- [ ] Add block-first convention to `CLAUDE.md` key files / conventions section
+- [ ] Verify blocks render correctly in the Vite dev server preview
 
 ### Phase 9 — Concise response mode
 
