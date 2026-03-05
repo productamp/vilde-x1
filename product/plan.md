@@ -292,16 +292,44 @@ Bundle [shadcn-ui-blocks](https://github.com/shadcnblocks/shadcn-ui-blocks) — 
 
 **Implementation:**
 
-1. **Scaffold integration** — add the most-used blocks to the default project template during `createFromTemplate` so they're available immediately in every new project:
-   - `hero-1`, `features-1`, `pricing-1`, `testimonials-1`, `cta-1`, `faq-1`, `footer-1`, `navbar-1`
-2. **Master prompt instruction** — add a section to `vilda-system.md` (Phase 8b) that tells Claude: "Before building a new section, check `/src/blocks/` for an existing block. Use it directly or adapt it. Only write a custom component if no block fits."
-3. **CLAUDE.md instruction** — add a brief rule to `CLAUDE.md` so the development AI assistant also respects the block-first convention during codebase work.
+**Storage — shared blocks registry (not per-project):**
+
+Blocks are stored once in the Electron app bundle, not copied into every project. This mirrors how the shadcn CLI works — blocks live in a registry; individual ones are pulled into a project on demand.
+
+```
+app/resources/
+  templates/
+    default/          ← copied per project (stays lean)
+      src/
+        components/ui/
+        pages/
+        ...
+  blocks/             ← shipped once in the app bundle, never copied wholesale
+    hero-1.tsx
+    features-1.tsx
+    pricing-1.tsx
+    testimonials-1.tsx
+    cta-1.tsx
+    faq-1.tsx
+    footer-1.tsx
+    navbar-1.tsx
+    ...
+```
+
+When Claude needs a block it reads from the shared registry path (resolved at runtime by the main process). The app copies only the specific block files Claude requests — on demand — into the project's `src/blocks/`. Projects stay lean; the full library is always available.
+
+**Implementation:**
+
+1. **Shared registry** — add selected shadcn-blocks source files to `app/resources/blocks/`
+2. **On-demand copy** — expose a tRPC endpoint (`blocks.use`) that copies a named block from the registry into the active project's `src/blocks/`
+3. **Master prompt instruction** — tell Claude the registry path and instruct it to request blocks via the endpoint before writing custom components
+4. **CLAUDE.md instruction** — add block-first convention for development AI (already done)
 
 **Controls:**
-- [ ] Add selected shadcn-blocks to the default scaffold template (`app/resources/templates/default/`)
-- [ ] Update `vilda-system.md` with block-first instruction and list of available blocks
-- [ ] Add block-first convention to `CLAUDE.md` key files / conventions section
-- [ ] Verify blocks render correctly in the Vite dev server preview
+- [ ] Add selected shadcn-blocks to `app/resources/blocks/` (not inside the scaffold template)
+- [ ] `blocks.use` tRPC endpoint — copy named block from registry into project `src/blocks/`
+- [ ] Update `vilda-system.md` with block-first instruction, registry path, and available block names
+- [ ] Verify copied blocks render correctly in the Vite dev server preview
 
 ### Phase 9 — Concise response mode
 
