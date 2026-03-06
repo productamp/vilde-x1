@@ -267,18 +267,29 @@ Write and wire in a Vilda-specific system prompt that steers every Claude Code s
 - [x] Verify bundling — prompt confirmed in compiled `out/main/index.js`
 - [ ] Test first-send output quality with real prompts
 
-### Phase 8c — Templates
+### Phase 8c — Templates (minimal)
 
-Add a templates experience to help users start from proven inspirations instead of a blank project.
+Add a Templates screen to the sidebar. One template (the existing default scaffold). Same card styling as Projects. Users can browse templates and start a project from one.
 
-- [ ] **Templates view** — add a `Templates` view in new-project and project flows with clear entry points
-- [ ] **Template gallery** — card-based gallery with thumbnail, name, and short description
-- [ ] **Filters and preview** — categories/filters and quick preview mode for fast browsing
-- [ ] **Clone/start action** — `Use Template` / `Clone Template` creates a new editable project and opens it immediately
-- [ ] **Template Generator wizard** — guided setup (business type, style, pages, tone) for users who prefer prompts-as-questions
-- [ ] **Wizard output project creation** — generated template output creates a fully editable project baseline
-- [ ] **Chat continuation** — users can immediately continue editing the cloned/generated result in chat
-- [ ] **Inspiration-first behavior** — templates stay starter-ready and reduce blank-page friction for non-technical users
+**Scope:** Minimal gallery shell. No filters, no categories, no search, no preview mode, no wizard. Just the screen, one card, and the action. More templates added later (see `product/notes/template-strategy.md`).
+
+**Navigation:**
+- Add `"templates"` to `desktopViewAtom` type
+- Add "Templates" nav item in `MainSidebar` (between Home and Projects)
+- `desktopView === "templates"` → renders `<TemplatesScreen />`
+
+**Template data:**
+- Hardcoded array in component for now (no JSON registry yet)
+- Each entry: `{ id, name, description, thumbnail }`
+- v1 has one entry: the existing `resources/templates/default/`
+
+**Controls:**
+- [ ] **`desktopViewAtom` update** — add `"templates"` to `DesktopView` type union
+- [ ] **Sidebar nav item** — "Templates" button in `MainSidebar`, same styling as Home/Projects
+- [ ] **`TemplatesScreen` component** — card grid matching `ProjectsScreen` layout (same `grid-cols`, card aspect ratio, typography, hover states)
+- [ ] **Template card** — thumbnail (static screenshot), name, one-line description, "Use Template" action
+- [ ] **Use Template action** — generates project name, calls `createFromTemplate`, opens chat (same flow as current auto-create on send)
+- [ ] **View routing** — add `desktopView === "templates"` branch in `agents-content.tsx`
 
 ### Phase 8d — shadcn-blocks
 
@@ -292,46 +303,39 @@ Bundle [shadcn-ui-blocks](https://github.com/shadcnblocks/shadcn-ui-blocks) — 
 
 **Why it matters:** Without a curated block library, Claude improvises every section from scratch — inconsistent spacing, ad-hoc colour usage, variable quality. With blocks pre-installed, Claude assembles proven sections like Lego pieces, giving non-technical users a polished result on the first try.
 
-**Implementation:**
+**Storage decision:** Blocks live directly inside the default scaffold template at `src/blocks/` — not in a separate app-level registry. See `product/blueprint/decisions/decision-002-shadcn-blocks-in-template.md`.
 
-**Storage — shared blocks registry (not per-project):**
-
-Blocks are stored once in the Electron app bundle, not copied into every project. This mirrors how the shadcn CLI works — blocks live in a registry; individual ones are pulled into a project on demand.
+This means blocks are part of every project from the start, just like `src/components/ui/`. Claude can read and adapt them without any tRPC endpoint or on-demand copy mechanism.
 
 ```
-app/resources/
-  templates/
-    default/          ← copied per project (stays lean)
-      src/
-        components/ui/
-        pages/
-        ...
-  blocks/             ← shipped once in the app bundle, never copied wholesale
-    hero-1.tsx
-    features-1.tsx
-    pricing-1.tsx
-    testimonials-1.tsx
-    cta-1.tsx
-    faq-1.tsx
-    footer-1.tsx
-    navbar-1.tsx
+app/resources/templates/default/
+  src/
+    blocks/           ← shadcn-ui-blocks source files, shipped with the template
+      hero-1.tsx
+      features-1.tsx
+      pricing-1.tsx
+      testimonials-1.tsx
+      cta-1.tsx
+      faq-1.tsx
+      footer-1.tsx
+      navbar-1.tsx
+      ...
+    components/ui/
+    pages/
     ...
 ```
 
-When Claude needs a block it reads from the shared registry path (resolved at runtime by the main process). The app copies only the specific block files Claude requests — on demand — into the project's `src/blocks/`. Projects stay lean; the full library is always available.
-
 **Implementation:**
 
-1. **Shared registry** — add selected shadcn-blocks source files to `app/resources/blocks/`
-2. **On-demand copy** — expose a tRPC endpoint (`blocks.use`) that copies a named block from the registry into the active project's `src/blocks/`
-3. **Master prompt instruction** — tell Claude the registry path and instruct it to request blocks via the endpoint before writing custom components
-4. **CLAUDE.md instruction** — add block-first convention for development AI (already done)
+1. **Add blocks to template** — copy selected shadcn-ui-blocks source files into `app/resources/templates/default/src/blocks/`
+2. **Update template CLAUDE.md** — add block-first convention: check `src/blocks/` before writing a custom component
+3. **Update vilda-system.md** — instruct Claude to check `src/blocks/` before building custom sections
 
 **Controls:**
-- [ ] Add selected shadcn-blocks to `app/resources/blocks/` (not inside the scaffold template)
-- [ ] `blocks.use` tRPC endpoint — copy named block from registry into project `src/blocks/`
-- [ ] Update `vilda-system.md` with block-first instruction, registry path, and available block names
-- [ ] Verify copied blocks render correctly in the Vite dev server preview
+- [ ] Add selected shadcn-blocks to `app/resources/templates/default/src/blocks/`
+- [ ] Update template `CLAUDE.md` with block-first convention (check `src/blocks/` first)
+- [ ] Update `vilda-system.md` with block-first instruction and available block names
+- [ ] Verify blocks render correctly in the Vite dev server preview
 
 ### Phase 9 — Content (CMS) view
 
