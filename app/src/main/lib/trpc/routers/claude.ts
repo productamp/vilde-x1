@@ -48,6 +48,7 @@ import {
   getEnabledPlugins,
 } from "./claude-settings"
 import { getProductVibeMode } from "../../app-mode"
+import { VILDA_SYSTEM_PROMPT } from "../../../prompts/vilda-system"
 
 /**
  * Parse @[agent:name], @[skill:name], and @[tool:servername] mentions from prompt text
@@ -1755,12 +1756,20 @@ ${prompt}
             }
 
             // System prompt config - use preset for both Claude and Ollama
-            // If AGENTS.md exists, append its content to the system prompt
-            const systemPromptConfig = agentsMdContent
+            // In productVibeMode, inject the Vilda master prompt
+            // If AGENTS.md exists, append its content too
+            const appendParts: string[] = []
+            if (getProductVibeMode()) {
+              appendParts.push(VILDA_SYSTEM_PROMPT)
+            }
+            if (agentsMdContent) {
+              appendParts.push(`# AGENTS.md\nThe following are the project's AGENTS.md instructions:\n\n${agentsMdContent}`)
+            }
+            const systemPromptConfig = appendParts.length > 0
               ? {
                   type: "preset" as const,
                   preset: "claude_code" as const,
-                  append: `\n\n# AGENTS.md\nThe following are the project's AGENTS.md instructions:\n\n${agentsMdContent}`,
+                  append: "\n\n" + appendParts.join("\n\n"),
                 }
               : {
                   type: "preset" as const,

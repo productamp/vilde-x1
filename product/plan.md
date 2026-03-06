@@ -34,16 +34,16 @@ They already pay for ChatGPT or have a Google account. They know HTML exists. Th
 | 7 | Workspace-to-projects | Rename "Workspace" to "Projects" and rework project management UX | Done |
 | 8 | New chat form simplification | Hide developer controls in `new-chat-form.tsx` | Done |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done |
-| 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Not started |
+| 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Done |
 | 8c | Templates | Template gallery + generator wizard for fast project kickoff | Not started |
 | 8d | shadcn-blocks | Include shadcn-ui-blocks in scaffold; instruct Claude to use blocks before building custom | Not started |
-| 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
-| 10 | Project settings | Simplify project settings for non-technical users | Not started |
-| 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
-| 12 | Onboarding | Simplified setup for non-technical users | Not started |
-| 13 | MVP Publish | Working release path for internal testers | Not started |
-| 14 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
-| 15 | Content (CMS) view | Integrated project content management with blog-first workflow | Not started |
+| 9 | Content (CMS) view | Integrated project content management with blog-first workflow | Not started |
+| 10 | MVP Publish | Working release path for internal testers | Not started |
+| 11 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started |
+| 12 | Project settings | Simplify project settings for non-technical users | Not started |
+| 13 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started |
+| 14 | Onboarding | Simplified setup for non-technical users | Not started |
+| 15 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started |
 | 16 | Publishing | One-click deploy to live URL | Not started |
 | 17 | UI and settings simplification | Simplify message views, hide developer tabs | Not started |
 | 18 | Guided brief generation | Pre-prompt conversation to produce editable project brief | Not started |
@@ -260,10 +260,12 @@ Write and wire in a Vilda-specific system prompt that steers every Claude Code s
 - Prompt is iteratively refined as we learn what produces the best first output
 
 **Controls:**
-- [ ] Write initial `vilda-system.md` prompt covering all categories above
-- [ ] Wire prompt into Claude Code session creation in `productVibeMode`
-- [ ] A/B test prompt versions against real first-send outputs
-- [ ] Version-control prompt with changelog notes
+- [x] Write `vilda-system.ts` master prompt (light index: role + way of working)
+- [x] Wire prompt into `systemPrompt.append` in `claude.ts`, gated on `productVibeMode`
+- [x] Beef up template `CLAUDE.md` with design quality, accessibility, image, and tone rules
+- [x] Slim template `AGENTS.md` to one-line CLAUDE.md redirect (Codex compat)
+- [x] Verify bundling — prompt confirmed in compiled `out/main/index.js`
+- [ ] Test first-send output quality with real prompts
 
 ### Phase 8c — Templates
 
@@ -331,7 +333,31 @@ When Claude needs a block it reads from the shared registry path (resolved at ru
 - [ ] Update `vilda-system.md` with block-first instruction, registry path, and available block names
 - [ ] Verify copied blocks render correctly in the Vite dev server preview
 
-### Phase 9 — Concise response mode
+### Phase 9 — Content (CMS) view
+
+Add an integrated, project-level CMS workflow with `Blog` as the default content type.
+
+- [ ] **Content entry point** — add a new `Content` view after `Preview` in project views/navigation
+- [ ] **Blog-first collections** — default `Blog` collection plus support for additional user-defined content types
+- [ ] **Three-panel CMS layout** — collection list, content item list, and content editor (read/edit modes)
+- [ ] **Core editorial actions** — create item, edit item, save, set draft/published status, publish updates
+- [ ] **Search and filtering** — fast item discovery by title/status/date and optional language/category
+- [ ] **Chat integration** — chat can create/update content items directly; manual edits and chat edits remain synced
+- [ ] **Editorial controls sub-view** — style, tone, voice guidelines, audience level, length/depth, SEO/editorial preferences
+- [ ] **Source-of-truth sync** — reads/writes from the real website content source, with view auto-refresh on file changes
+- [ ] **Project-scoped content model** — content always belongs to the active project (never global)
+- [ ] **Autopilot (Pro) workflows** — optional scheduled/automated generation and adaptation in the same CMS workflow
+
+### Phase 10 — MVP Publish
+
+Create a working publish path for internal testers (not full public publishing yet).
+
+- [ ] **Internal tester target** — deploy to a single tester-facing environment
+- [ ] **Shareable tester URL** — return a working URL that internal testers can open immediately
+- [ ] **Basic update flow** — push fixes and re-publish quickly for tester re-validation
+- [ ] **Simple failures** — friendly error states with one retry path for internal testing
+
+### Phase 11 — Concise response mode
 
 **Purely cosmetic.** No changes to the prompt, system prompt, or what Claude is asked to do. Only how the existing response stream is rendered in the UI.
 
@@ -366,7 +392,7 @@ When Claude needs a block it reads from the shared registry path (resolved at ru
 - [ ] Animated active-row indicator while stream is live
 - [ ] Toggle button in chat header (concise ↔ detailed)
 
-### Phase 10 — Project settings
+### Phase 12 — Project settings
 
 Simplify project settings for non-technical users. Hide developer-centric controls in `productVibeMode`.
 
@@ -376,7 +402,7 @@ Simplify project settings for non-technical users. Hide developer-centric contro
 - [ ] **Delete / archive project** — clear, accessible actions with confirmation dialogs
 - [ ] **Favourite from settings** — toggle favourite status from the project settings panel
 
-### Phase 11 — Pro menu + sitemap
+### Phase 13 — Pro menu + sitemap
 
 Add a project sitemap canvas that is always synced from real pages/routes.
 
@@ -389,7 +415,7 @@ Add a project sitemap canvas that is always synced from real pages/routes.
 - [ ] **Project-scoped state** — sitemap is per project and not shared globally across projects
 - [ ] **AI enrichment optional** — allow optional AI-only enrichment (for example section naming), while core structure stays deterministic
 
-### Phase 12 — Onboarding
+### Phase 14 — Onboarding
 
 Make the first 60 seconds work for someone who's never used a terminal.
 Target outcome: app works automatically without the user opening a terminal.
@@ -398,16 +424,7 @@ Target outcome: app works automatically without the user opening a terminal.
 - [ ] **Automatic environment setup** — detect/install/configure what is needed in-app so users can start immediately
 - [ ] **First project creation** — "What kind of website do you want?" → scaffold → preview
 
-### Phase 13 — MVP Publish
-
-Create a working publish path for internal testers (not full public publishing yet).
-
-- [ ] **Internal tester target** — deploy to a single tester-facing environment
-- [ ] **Shareable tester URL** — return a working URL that internal testers can open immediately
-- [ ] **Basic update flow** — push fixes and re-publish quickly for tester re-validation
-- [ ] **Simple failures** — friendly error states with one retry path for internal testing
-
-### Phase 14 — Scaffold optimisation
+### Phase 15 — Scaffold optimisation
 
 Improve the starter template based on what we've learned from real usage.
 
@@ -416,21 +433,6 @@ Improve the starter template based on what we've learned from real usage.
 - [ ] **Improved design skills** — upgrade scaffolded design quality (typography, spacing, color systems, component polish) so first output looks production-ready
 - [ ] **Template variants** — multiple starter templates for different site types
 - [ ] **Reduce first-build time** — optimise dependencies, trim unused components, speed up `npm install`
-
-### Phase 15 — Content (CMS) view
-
-Add an integrated, project-level CMS workflow with `Blog` as the default content type.
-
-- [ ] **Content entry point** — add a new `Content` view after `Preview` in project views/navigation
-- [ ] **Blog-first collections** — default `Blog` collection plus support for additional user-defined content types
-- [ ] **Three-panel CMS layout** — collection list, content item list, and content editor (read/edit modes)
-- [ ] **Core editorial actions** — create item, edit item, save, set draft/published status, publish updates
-- [ ] **Search and filtering** — fast item discovery by title/status/date and optional language/category
-- [ ] **Chat integration** — chat can create/update content items directly; manual edits and chat edits remain synced
-- [ ] **Editorial controls sub-view** — style, tone, voice guidelines, audience level, length/depth, SEO/editorial preferences
-- [ ] **Source-of-truth sync** — reads/writes from the real website content source, with view auto-refresh on file changes
-- [ ] **Project-scoped content model** — content always belongs to the active project (never global)
-- [ ] **Autopilot (Pro) workflows** — optional scheduled/automated generation and adaptation in the same CMS workflow
 
 ### Phase 16 — Publishing
 

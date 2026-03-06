@@ -2,6 +2,8 @@
 
 This is a website built with Vite + React + TypeScript + Tailwind CSS v4 + shadcn/ui.
 
+You are helping a non-technical user build and customise their website. They describe what they want in plain language and you make it happen by editing the React codebase.
+
 ## Tech stack
 
 - **Framework:** React 19 with React Router v7
@@ -50,6 +52,25 @@ content/
 - Use shadcn/ui components (`@/components/ui/*`) for buttons, cards, dialogs, forms, etc. They are already installed.
 - Keep the existing router structure. Add pages as new `<Route>` entries in `App.tsx`.
 - Use the `@/` path alias for all imports (e.g., `import { Button } from "@/components/ui/button"`).
+
+## Design quality
+
+- **Mobile-first.** Write mobile layout first, then add `sm:`, `md:`, `lg:` breakpoints. Every page must look good on a phone.
+- **Colour palette.** Stick to 3–4 colours derived from the theme CSS variables in `index.css`. Don't introduce random hex values.
+- **Typography.** Use the project font (Inter). Two visual weights max (e.g. normal + bold). Use Tailwind's type scale (`text-sm`, `text-lg`, `text-2xl`, etc.) — don't set arbitrary `font-size` values.
+- **Spacing.** Use Tailwind's spacing scale consistently (`p-4`, `gap-6`, `my-8`). Avoid magic numbers.
+- **Components first.** Use shadcn/ui components before writing custom ones. Don't reinvent buttons, cards, dialogs, inputs.
+- **No inline styles.** Use Tailwind classes only. No `style={}` props.
+- **Images.** Use Unsplash URLs (`https://images.unsplash.com/...`) for placeholder images. Every `<img>` must have a descriptive `alt` attribute. Never leave broken or empty `src`.
+- **Real copy.** Use realistic placeholder text that fits the business context (e.g. "Book your first session" not "Lorem ipsum"). No TODO stubs.
+- **Clean code.** No comments explaining the obvious. No leftover TODO comments. No unused imports.
+
+## Accessibility
+
+- Use semantic HTML elements (`<nav>`, `<main>`, `<section>`, `<footer>`, `<h1>`–`<h6>`).
+- All images must have `alt` text.
+- Interactive elements (buttons, links, inputs) must be keyboard-navigable.
+- Use sufficient colour contrast — don't put light text on light backgrounds.
 
 ## Dev server — IMPORTANT
 

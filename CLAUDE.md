@@ -30,16 +30,16 @@ See `product/plan.md` for full details.
 | 7 | Workspace-to-projects | Projects screen, cards, favourites, filters | Done | |
 | 8 | New chat form simplification | Hide developer controls in new-chat-form.tsx | Done | |
 | 8a | Rebrand to Vilda | Rename all "21st" / "1Code" references to "Vilda" in UI and config | Done | |
-| 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Not started | |
+| 8b | Master prompt | System prompt engineering to ensure best-practice, high-quality site output | Done | |
 | 8c | Templates | Template gallery + generator wizard for fast project kickoff | Not started | |
 | 8d | shadcn-blocks | Include shadcn-ui-blocks in scaffold; instruct Claude to use blocks before building custom | Not started | |
-| 9 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
-| 10 | Project settings | Simplify project settings for non-technical users | Not started | |
-| 11 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
-| 12 | Onboarding | Simplified setup for non-technical users | Not started | |
-| 13 | MVP Publish | Working release path for internal testers | Not started | |
-| 14 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
-| 15 | Content (CMS) view | Integrated project content management with blog-first workflow | Not started | |
+| 9 | Content (CMS) view | Integrated project content management with blog-first workflow | Not started | |
+| 10 | MVP Publish | Working release path for internal testers | Not started | |
+| 11 | Concise response mode | Default chat responses: compact, action-focused, Lovable-style progress display | Not started | |
+| 12 | Project settings | Simplify project settings for non-technical users | Not started | |
+| 13 | Pro menu + sitemap | Sitemap canvas synced to project pages/routes | Not started | |
+| 14 | Onboarding | Simplified setup for non-technical users | Not started | |
+| 15 | Scaffold optimisation | Smarter defaults, prompt-aware templates | Not started | |
 | 16 | Publishing | One-click deploy to live URL | Not started | |
 | 17 | UI and settings simplification | Simplify message views, hide developer tabs | Not started | |
 | 18 | Guided brief generation | Pre-prompt conversation to produce editable project brief | Not started | |
